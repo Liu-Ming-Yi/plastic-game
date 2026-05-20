@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>點點塑公司 - 海底大冒險</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+    background: #001428; user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  #game { width: 100vw; height: 100vh; position: relative; }
+  canvas { display: block; background: linear-gradient(180deg, #003a5c 0%, #001428 100%); }
+
+  #login {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #004a7c 0%, #001428 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; z-index: 100;
+  }
+  #login h1 { color: #fff; font-size: 28px; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,200,255,0.5); }
+  #login .subtitle { color: #88c5e8; font-size: 14px; margin-bottom: 30px; }
+  #login input {
+    width: 90%; max-width: 300px; padding: 14px;
+    border: 2px solid #00aaff; border-radius: 12px;
+    background: rgba(0,30,60,0.8); color: #fff;
+    font-size: 16px; text-align: center; margin-bottom: 20px; outline: none;
+  }
+  #login input::placeholder { color: #5a8ab0; }
+  .skin-section { width: 90%; max-width: 320px; margin-bottom: 20px; }
+  .skin-section-title { color: #fff; font-size: 14px; margin-bottom: 10px; text-align: center; }
+  .skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .skin-item {
+    aspect-ratio: 1; background: rgba(0,40,80,0.6);
+    border: 2px solid transparent; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; cursor: pointer; position: relative; transition: all 0.2s;
+  }
+  .skin-item.selected { border-color: #00ffaa; background: rgba(0,100,80,0.6); }
+  .skin-item.locked { opacity: 0.4; }
+  .skin-item .lock-info { position: absolute; bottom: 2px; left: 0; right: 0; font-size: 9px; color: #fff; text-align: center; }
+  #login button {
+    width: 90%; max-width: 300px; padding: 16px;
+    background: linear-gradient(90deg, #00aaff, #00ddaa);
+    border: none; border-radius: 12px; color: #fff;
+    font-size: 18px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,200,255,0.4);
+  }
+  #login button:active { transform: scale(0.97); }
+  #status-msg { color: #ffaa44; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+
+  #hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  #leaderboard {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,20,40,0.75); border: 1px solid rgba(0,170,255,0.3);
+    border-radius: 10px; padding: 10px 12px; min-width: 140px;
+    color: #fff; font-size: 12px; backdrop-filter: blur(8px);
+  }
+  #leaderboard .lb-title { font-size: 11px; color: #88c5e8; margin-bottom: 6px; font-weight: bold; }
+  #leaderboard .lb-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  #leaderboard .lb-row .lb-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #leaderboard .lb-row.me { color: #ffdd44; font-weight: bold; }
+  #timer {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,20,40,0.75); border: 1px solid rgba(0,170,255,0.3);
+    border-radius: 10px; padding: 8px 14px;
+    color: #fff; font-size: 14px; font-weight: bold; backdrop-filter: blur(8px);
+  }
+  #me-status {
+    position: absolute; bottom: 12px; left: 10px; right: 10px;
+    background: rgba(0,20,40,0.75); border: 1px solid rgba(0,170,255,0.3);
+    border-radius: 10px; padding: 8px 14px;
+    color: #fff; font-size: 13px; backdrop-filter: blur(8px);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #me-status .me-rank { color: #ffdd44; font-weight: bold; font-size: 16px; }
+  #joystick {
+    position: absolute; bottom: 70px; left: 30px;
+    width: 110px; height: 110px;
+    background: rgba(0,40,80,0.4); border: 2px solid rgba(0,170,255,0.5);
+    border-radius: 50%; pointer-events: auto; z-index: 20; touch-action: none;
+  }
+  #joystick-knob {
+    position: absolute; top: 50%; left: 50%;
+    width: 50px; height: 50px;
+    background: radial-gradient(circle, #00ddff 0%, #0088cc 100%);
+    border-radius: 50%; transform: translate(-50%, -50%);
+    box-shadow: 0 2px 10px rgba(0,200,255,0.6);
+  }
+  #result {
+    position: absolute; inset: 0; background: rgba(0,10,20,0.95);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; z-index: 200; color: #fff;
+  }
+  #result.show { display: flex; }
+  #result h2 { font-size: 26px; color: #ff4444; margin-bottom: 8px; text-align: center; text-shadow: 0 2px 10px rgba(255,0,0,0.4); }
+  #result .reveal { font-size: 14px; color: #ffaa88; margin-bottom: 20px; text-align: center; line-height: 1.5; max-width: 320px; }
+  #result-list {
+    width: 95%; max-width: 360px; max-height: 60vh;
+    overflow-y: auto; background: rgba(0,30,50,0.6); border-radius: 12px; padding: 12px;
+  }
+  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; }
+  .result-row:last-child { border-bottom: none; }
+  .result-row.me { color: #ffdd44; font-weight: bold; }
+  .result-row .rank-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-right: 8px; font-size: 12px;
+  }
+  .result-row.top-bad .rank-num { background: #aa2222; }
+  .result-row .plastic-amount { color: #88ff88; font-size: 11px; }
+  .result-row.top-bad .plastic-amount { color: #ff6666; }
+  #result button { margin-top: 20px; padding: 12px 30px; background: linear-gradient(90deg, #00aaff, #00ddaa); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; }
+  #host-panel {
+    position: absolute; top: 50px; left: 10px;
+    background: rgba(0,20,40,0.9); border: 1px solid rgba(255,200,0,0.5);
+    border-radius: 10px; padding: 10px; color: #fff; font-size: 12px;
+    pointer-events: auto; z-index: 15; display: none;
+  }
+  #host-panel.show { display: block; }
+  #host-panel label { display: block; margin-bottom: 6px; }
+  #host-panel input { width: 60px; padding: 4px; background: #001a30; border: 1px solid #00aaff; color: #fff; border-radius: 4px; }
+  #host-panel button { margin-top: 6px; padding: 6px 12px; background: #ff8800; border: none; border-radius: 4px; color: #fff; font-size: 12px; cursor: pointer; }
+  #host-toggle {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,170,0,0.2); border: 1px solid rgba(255,170,0,0.5);
+    border-radius: 8px; padding: 6px 12px; color: #ffaa00;
+    font-size: 11px; pointer-events: auto; z-index: 15; cursor: pointer;
+  }
+  #connection-status {
+    position: absolute; bottom: 70px; right: 10px;
+    font-size: 10px; color: #88c5e8;
+    background: rgba(0,20,40,0.6); padding: 4px 8px; border-radius: 6px; z-index: 15;
+  }
+  .toast {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8); color: #fff; padding: 16px 24px;
+    border-radius: 12px; font-size: 14px; z-index: 50;
+    animation: toast-pop 2s ease-out forwards; pointer-events: none;
+  }
+  @keyframes toast-pop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="canvas"></canvas>
+  <div id="login">
+    <h1>🐠 點點塑公司</h1>
+    <p class="subtitle">海底大冒險 · 看誰吃得最多！</p>
+    <input id="name-input" type="text" placeholder="輸入你的暱稱" maxlength="10">
+    <div class="skin-section">
+      <div class="skin-section-title">選擇你的角色</div>
+      <div class="skin-grid" id="skin-grid"></div>
+    </div>
+    <button id="start-btn">開始遊戲</button>
+    <div id="status-msg"></div>
+  </div>
+  <div id="hud">
+    <div id="timer">⏱ --:--</div>
+    <div id="leaderboard"><div class="lb-title">🏆 排行榜 TOP 5</div><div id="lb-list"></div></div>
+    <div id="me-status">
+      <div>名次：<span class="me-rank" id="my-rank">-</span></div>
+      <div id="my-name-display">-</div>
+      <div>分數：<span id="my-score">0</span></div>
+    </div>
+    <div id="joystick"><div id="joystick-knob"></div></div>
+    <div id="host-toggle">⚙️ 主持人</div>
+    <div id="host-panel">
+      <label>時長(秒)：<input id="duration-input" type="number" value="180" min="30" max="900"></label>
+      <button id="start-game-btn">開始遊戲</button>
+      <button id="end-game-btn" style="background:#cc3333;">結束遊戲</button>
+    </div>
+    <div id="connection-status">連線中...</div>
+  </div>
+  <div id="result">
+    <h2>💀 真相揭曉</h2>
+    <p class="reveal">你吃下的不是食物，是<strong>塑膠微粒</strong>。<br>每年有數百萬噸塑膠汙染海洋，<br>進入魚類，最終回到我們的餐桌。</p>
+    <div id="result-list"></div>
+    <button id="result-close">關閉</button>
+  </div>
+</div>
+<script>
+/* ========================================================
+   ⚙️ 設定區 - 改這一行！
+   把 Cloudflare Tunnel 給你的網址貼進來
+   範例：'wss://abc-def-xyz.trycloudflare.com'
+   注意：必須是 wss:// 開頭（不是 https://）
+   ======================================================== */
+const SERVER_URL = 'wss://ecology-strengths-texts-fundamental.trycloudflare.com';
+
+const WORLD_W = 3000, WORLD_H = 3000;
+const FOOD_COUNT = 200;
+const BOT_COUNT = 8;
+const PLAYER_BASE_SIZE = 20;
+const FOOD_SIZE = 6;
+const BASE_SPEED = 3.0;
+const BROADCAST_INTERVAL = 150;
+
+const SKINS = [
+  { id: 'fish1', emoji: '🐠', name: '小丑魚', unlock: 0 },
+  { id: 'fish2', emoji: '🐟', name: '藍魚', unlock: 0 },
+  { id: 'fish3', emoji: '🐡', name: '河豚', unlock: 0 },
+  { id: 'octopus', emoji: '🐙', name: '章魚', unlock: 50 },
+  { id: 'turtle', emoji: '🐢', name: '海龜', unlock: 150 },
+  { id: 'shark', emoji: '🦈', name: '鯊魚', unlock: 300 },
+  { id: 'whale', emoji: '🐋', name: '鯨魚', unlock: 500 },
+  { id: 'dragon', emoji: '🐉', name: '海龍王', unlock: 800 },
+];
+
+function getPoisonColor(score) {
+  if (score < 30) return '#e8f4ff';
+  if (score < 80) return '#c8f0d0';
+  if (score < 180) return '#a0e060';
+  if (score < 350) return '#60c030';
+  return '#30ff00';
+}
+
+let ws = null;
+let connected = false;
+let myId = 'p_' + Math.random().toString(36).substr(2, 9);
+let myName = '';
+let mySkin = 'fish1';
+let myScore = 0;
+let myX = WORLD_W / 2, myY = WORLD_H / 2;
+let myAlive = true;
+let autoAngle = Math.random() * Math.PI * 2;
+let controlVx = 0, controlVy = 0;
+let foods = [];
+let players = new Map();
+let bots = new Map();
+let iAmBotHost = false;
+let botHostId = null;
+let gameState = {
+  status: 'playing',
+  startTime: Date.now(),
+  duration: 999999,
+  endTime: Date.now() + 999999000,
+};
+let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins') || '["fish1","fish2","fish3"]');
+let bestScore = parseInt(localStorage.getItem('bestScore') || '0');
+
+function dist(x1, y1, x2, y2) { return Math.sqrt((x1-x2)**2 + (y1-y2)**2); }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function playerSize(score) { return PLAYER_BASE_SIZE + Math.sqrt(score) * 2; }
+function seededRandom(seed) { const x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  document.getElementById('game').appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+function renderSkinGrid() {
+  const grid = document.getElementById('skin-grid');
+  grid.innerHTML = '';
+  SKINS.forEach(skin => {
+    const unlocked = unlockedSkins.includes(skin.id) || bestScore >= skin.unlock;
+    if (unlocked && !unlockedSkins.includes(skin.id)) {
+      unlockedSkins.push(skin.id);
+      localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+    }
+    const div = document.createElement('div');
+    div.className = 'skin-item' + (skin.id === mySkin ? ' selected' : '') + (!unlocked ? ' locked' : '');
+    div.innerHTML = skin.emoji + (!unlocked ? `<div class="lock-info">${skin.unlock}分</div>` : '');
+    if (unlocked) div.onclick = () => { mySkin = skin.id; renderSkinGrid(); };
+    grid.appendChild(div);
+  });
+}
+
+function setupJoystick() {
+  const stick = document.getElementById('joystick');
+  const knob = document.getElementById('joystick-knob');
+  let active = false;
+  let cx = 0, cy = 0;
+  function start(e) {
+    e.preventDefault();
+    active = true;
+    const rect = stick.getBoundingClientRect();
+    cx = rect.left + rect.width / 2;
+    cy = rect.top + rect.height / 2;
+    move(e);
+  }
+  function move(e) {
+    if (!active) return;
+    e.preventDefault();
+    const touch = e.touches ? e.touches[0] : e;
+    let dx = touch.clientX - cx;
+    let dy = touch.clientY - cy;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const maxR = 40;
+    if (len > maxR) { dx = dx / len * maxR; dy = dy / len * maxR; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    controlVx = dx / maxR;
+    controlVy = dy / maxR;
+  }
+  function end() {
+    active = false;
+    knob.style.transform = 'translate(-50%, -50%)';
+    controlVx = 0; controlVy = 0;
+  }
+  stick.addEventListener('touchstart', start, { passive: false });
+  stick.addEventListener('touchmove', move, { passive: false });
+  stick.addEventListener('touchend', end);
+  stick.addEventListener('mousedown', start);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+}
+
+function connect() {
+  return new Promise((resolve, reject) => {
+    ws = new WebSocket(SERVER_URL);
+    ws.onopen = () => {
+      connected = true;
+      document.getElementById('connection-status').textContent = '✅ 已連線';
+      ws.send(JSON.stringify({ type: 'join', id: myId, name: myName }));
+      resolve();
+    };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      handleMessage(msg);
+    };
+    ws.onclose = () => {
+      connected = false;
+      document.getElementById('connection-status').textContent = '❌ 已斷線';
+    };
+    ws.onerror = (err) => reject(err);
+  });
+}
+
+function send(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(msg));
+  }
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'bot-host':
+      botHostId = msg.hostId;
+      iAmBotHost = (botHostId === myId);
+      if (iAmBotHost && bots.size === 0) initBots();
+      break;
+    case 'pos':
+      const p = players.get(msg.id) || {};
+      Object.assign(p, msg, { lastUpdate: Date.now() });
+      players.set(msg.id, p);
+      break;
+    case 'eat-player':
+      if (msg.victim === myId) {
+        myScore = 0;
+        myX = Math.random() * WORLD_W;
+        myY = Math.random() * WORLD_H;
+        showToast('💀 你被吃掉了！重新開始');
+      }
+      break;
+    case 'eat-food':
+      const f = foods.find(f => f.id === msg.foodId);
+      if (f) { f.x = msg.newX; f.y = msg.newY; }
+      break;
+    case 'bots':
+      if (iAmBotHost) break;
+      msg.bots.forEach(b => players.set(b.id, { ...b, lastUpdate: Date.now() }));
+      break;
+    case 'game-state':
+      gameState = msg.state;
+      if (gameState.status === 'ended') showResult();
+      else if (gameState.status === 'playing') showToast('🎮 遊戲開始！');
+      break;
+    case 'player-leave':
+      players.delete(msg.id);
+      break;
+  }
+}
+
+function initFoods() {
+  foods = [];
+  for (let i = 0; i < FOOD_COUNT; i++) {
+    foods.push({
+      id: 'f_' + i,
+      x: seededRandom(i * 7) * WORLD_W,
+      y: seededRandom(i * 7 + 1) * WORLD_H,
+    });
+  }
+}
+
+function initBots() {
+  const botNames = ['泡泡', '小藻', '阿吉', '海星', '波波', '小貝', '游游', '魚仔'];
+  for (let i = 0; i < BOT_COUNT; i++) {
+    const id = 'bot_' + i;
+    bots.set(id, {
+      id, name: '🤖' + botNames[i],
+      x: Math.random() * WORLD_W,
+      y: Math.random() * WORLD_H,
+      score: Math.floor(Math.random() * 30),
+      skin: SKINS[Math.floor(Math.random() * 3)].id,
+      alive: true,
+      targetTimer: 0,
+      angle: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function updateBots() {
+  if (!iAmBotHost) return;
+  for (const bot of bots.values()) {
+    bot.targetTimer--;
+    if (bot.targetTimer <= 0) {
+      let nearestFood = null, minD = Infinity;
+      for (const f of foods) {
+        const d = dist(bot.x, bot.y, f.x, f.y);
+        if (d < minD) { minD = d; nearestFood = f; }
+      }
+      if (nearestFood && minD < 400) {
+        bot.angle = Math.atan2(nearestFood.y - bot.y, nearestFood.x - bot.x);
+      } else {
+        bot.angle += (Math.random() - 0.5) * 1.0;
+      }
+      bot.targetTimer = 30 + Math.random() * 30;
+    }
+    for (const p of players.values()) {
+      if (p.id === bot.id || !p.alive) continue;
+      if (p.score > bot.score * 1.3) {
+        const d = dist(bot.x, bot.y, p.x, p.y);
+        if (d < 150) bot.angle = Math.atan2(bot.y - p.y, bot.x - p.x);
+      }
+    }
+    const speed = BASE_SPEED * (1 - Math.min(bot.score / 500, 0.5));
+    bot.x += Math.cos(bot.angle) * speed;
+    bot.y += Math.sin(bot.angle) * speed;
+    bot.x = clamp(bot.x, 20, WORLD_W - 20);
+    bot.y = clamp(bot.y, 20, WORLD_H - 20);
+    const botSize = playerSize(bot.score);
+    for (const f of foods) {
+      if (dist(bot.x, bot.y, f.x, f.y) < botSize) {
+        bot.score++;
+        f.x = Math.random() * WORLD_W;
+        f.y = Math.random() * WORLD_H;
+        send({ type: 'eat-food', foodId: f.id, newX: f.x, newY: f.y });
+      }
+    }
+    players.set(bot.id, { ...bot, lastUpdate: Date.now() });
+  }
+  const botList = Array.from(bots.values()).map(b => ({
+    id: b.id, name: b.name, x: b.x, y: b.y,
+    score: b.score, skin: b.skin, alive: b.alive, isBot: true,
+  }));
+  send({ type: 'bots', bots: botList });
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function updateMe() {
+  if (!myAlive) return;
+  autoAngle += (Math.random() - 0.5) * 0.05;
+  let vx, vy;
+  if (Math.abs(controlVx) > 0.1 || Math.abs(controlVy) > 0.1) {
+    vx = controlVx; vy = controlVy;
+    autoAngle = Math.atan2(vy, vx);
+  } else {
+    vx = Math.cos(autoAngle) * 0.5;
+    vy = Math.sin(autoAngle) * 0.5;
+  }
+  const speed = BASE_SPEED * (1 - Math.min(myScore / 500, 0.5));
+  myX += vx * speed;
+  myY += vy * speed;
+  myX = clamp(myX, 20, WORLD_W - 20);
+  myY = clamp(myY, 20, WORLD_H - 20);
+  const mySize = playerSize(myScore);
+  for (const f of foods) {
+    if (dist(myX, myY, f.x, f.y) < mySize) {
+      myScore++;
+      f.x = Math.random() * WORLD_W;
+      f.y = Math.random() * WORLD_H;
+      send({ type: 'eat-food', foodId: f.id, newX: f.x, newY: f.y });
+    }
+  }
+  for (const p of players.values()) {
+    if (p.id === myId || !p.alive) continue;
+    const pSize = playerSize(p.score || 0);
+    if (mySize > pSize * 1.2 && dist(myX, myY, p.x, p.y) < mySize - pSize / 2) {
+      myScore += Math.floor((p.score || 0) * 0.5 + 5);
+      send({ type: 'eat-player', eater: myId, victim: p.id });
+    }
+  }
+}
+
+let lastBroadcast = 0;
+function broadcastMe() {
+  const now = Date.now();
+  if (now - lastBroadcast < BROADCAST_INTERVAL) return;
+  lastBroadcast = now;
+  send({ type: 'pos', id: myId, name: myName, x: myX, y: myY, score: myScore, skin: mySkin, alive: myAlive });
+}
+
+function render() {
+  ctx.fillStyle = '#001428';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const camX = myX - canvas.width / 2;
+  const camY = myY - canvas.height / 2;
+  ctx.strokeStyle = 'rgba(0,100,150,0.15)';
+  ctx.lineWidth = 1;
+  const gridSize = 100;
+  const offsetX = -camX % gridSize;
+  const offsetY = -camY % gridSize;
+  for (let x = offsetX; x < canvas.width; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = offsetY; y < canvas.height; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+  for (const f of foods) {
+    const sx = f.x - camX, sy = f.y - camY;
+    if (sx < -10 || sx > canvas.width + 10 || sy < -10 || sy > canvas.height + 10) continue;
+    const hue = (f.id.charCodeAt(2) * 37) % 360;
+    ctx.fillStyle = `hsl(${hue}, 90%, 65%)`;
+    ctx.beginPath();
+    ctx.arc(sx, sy, FOOD_SIZE, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const allPlayers = Array.from(players.values());
+  allPlayers.push({ id: myId, name: myName, x: myX, y: myY, score: myScore, skin: mySkin, alive: myAlive });
+  allPlayers.sort((a, b) => (a.score || 0) - (b.score || 0));
+  for (const p of allPlayers) {
+    if (!p.alive) continue;
+    const sx = p.x - camX, sy = p.y - camY;
+    const size = playerSize(p.score || 0);
+    if (sx < -size || sx > canvas.width + size || sy < -size || sy > canvas.height + size) continue;
+    const color = getPoisonColor(p.score || 0);
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.arc(sx, sy, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    const skin = SKINS.find(s => s.id === p.skin) || SKINS[0];
+    ctx.font = `${size * 1.5}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(skin.emoji, sx, sy);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(p.name || '?', sx, sy - size - 8);
+    ctx.fillText(p.name || '?', sx, sy - size - 8);
+  }
+}
+
+function updateHUD() {
+  const all = Array.from(players.values());
+  all.push({ id: myId, name: myName, score: myScore });
+  all.sort((a, b) => (b.score || 0) - (a.score || 0));
+  const lbList = document.getElementById('lb-list');
+  lbList.innerHTML = '';
+  all.slice(0, 5).forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p.id === myId ? ' me' : '');
+    row.innerHTML = `<span class="lb-name">${i+1}. ${p.name}</span><span>${p.score || 0}</span>`;
+    lbList.appendChild(row);
+  });
+  const myRank = all.findIndex(p => p.id === myId) + 1;
+  document.getElementById('my-rank').textContent = myRank || '-';
+  document.getElementById('my-name-display').textContent = myName;
+  document.getElementById('my-score').textContent = myScore;
+  if (gameState.status === 'playing' && gameState.duration < 99999) {
+    const remain = Math.max(0, gameState.endTime - Date.now());
+    const sec = Math.ceil(remain / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    document.getElementById('timer').textContent = `⏱ ${m}:${s.toString().padStart(2,'0')}`;
+    if (remain <= 0 && iAmBotHost) endGame();
+  } else if (gameState.status === 'playing') {
+    document.getElementById('timer').textContent = '⏱ 自由練習中';
+  } else if (gameState.status === 'ended') {
+    document.getElementById('timer').textContent = '⏱ 已結束';
+  }
+}
+
+let botUpdateTimer = 0;
+function gameLoop() {
+  updateMe();
+  broadcastMe();
+  botUpdateTimer++;
+  if (botUpdateTimer >= 5) {
+    updateBots();
+    botUpdateTimer = 0;
+  }
+  const now = Date.now();
+  for (const [pid, p] of players) {
+    if (!pid.startsWith('bot_') && now - p.lastUpdate > 5000) {
+      players.delete(pid);
+    }
+  }
+  render();
+  updateHUD();
+  requestAnimationFrame(gameLoop);
+}
+
+function startGame(duration) {
+  const state = { status: 'playing', startTime: Date.now(), duration: duration, endTime: Date.now() + duration * 1000 };
+  send({ type: 'game-state', state });
+  gameState = state;
+}
+
+function endGame() {
+  const state = { ...gameState, status: 'ended' };
+  send({ type: 'game-state', state });
+  gameState = state;
+  showResult();
+}
+
+function showResult() {
+  const all = Array.from(players.values()).filter(p => p.name);
+  all.push({ id: myId, name: myName, score: myScore });
+  all.sort((a, b) => (b.score || 0) - (a.score || 0));
+  if (myScore > bestScore) {
+    bestScore = myScore;
+    localStorage.setItem('bestScore', bestScore);
+  }
+  const list = document.getElementById('result-list');
+  list.innerHTML = '';
+  all.forEach((p, i) => {
+    const row = document.createElement('div');
+    const isTopBad = i < 3;
+    row.className = 'result-row' + (p.id === myId ? ' me' : '') + (isTopBad ? ' top-bad' : '');
+    const grams = ((p.score || 0) * 0.5).toFixed(1);
+    row.innerHTML = `
+      <div><span class="rank-num">${i+1}</span>${p.name}${p.id?.startsWith('bot_') ? ' 🤖' : ''}</div>
+      <div><span class="plastic-amount">吞下 ${grams}g 塑膠</span></div>
+    `;
+    list.appendChild(row);
+  });
+  document.getElementById('result').classList.add('show');
+}
+
+document.getElementById('start-btn').onclick = async () => {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) { alert('請輸入暱稱'); return; }
+  myName = name;
+  myX = Math.random() * WORLD_W;
+  myY = Math.random() * WORLD_H;
+  if (SERVER_URL.includes('YOUR-TUNNEL-URL')) {
+    document.getElementById('status-msg').textContent = '⚠️ 程式還沒設定伺服器網址';
+    return;
+  }
+  document.getElementById('status-msg').textContent = '連線中...';
+  try { await connect(); }
+  catch (e) {
+    document.getElementById('status-msg').textContent = '❌ 連線失敗，請檢查網址或聯絡主辦人';
+    return;
+  }
+  document.getElementById('login').style.display = 'none';
+  initFoods();
+  setupJoystick();
+  gameLoop();
+};
+
+document.getElementById('host-toggle').onclick = () => {
+  document.getElementById('host-panel').classList.toggle('show');
+};
+document.getElementById('start-game-btn').onclick = () => {
+  const dur = parseInt(document.getElementById('duration-input').value) || 180;
+  startGame(dur);
+  showToast('🎮 遊戲開始！倒數 ' + dur + ' 秒');
+};
+document.getElementById('end-game-btn').onclick = () => endGame();
+document.getElementById('result-close').onclick = () => {
+  document.getElementById('result').classList.remove('show');
+};
+
+renderSkinGrid();
+</script>
+</body>
+</html>
