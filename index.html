@@ -440,6 +440,8 @@ function updateBots() {
     bot.x = clamp(bot.x, 20, WORLD_W - 20);
     bot.y = clamp(bot.y, 20, WORLD_H - 20);
     const botSize = playerSize(bot.score);
+
+    // AI 吃食物
     for (const f of foods) {
       if (dist(bot.x, bot.y, f.x, f.y) < botSize) {
         bot.score++;
@@ -448,6 +450,26 @@ function updateBots() {
         send({ type: 'eat-food', foodId: f.id, newX: f.x, newY: f.y });
       }
     }
+
+    // AI 吃其他玩家（不吃其他 AI）
+    for (const p of players.values()) {
+      if (p.id === bot.id || !p.alive || p.id.startsWith('bot_')) continue;
+      const pSize = playerSize(p.score || 0);
+      if (botSize > pSize * 1.2 && dist(bot.x, bot.y, p.x, p.y) < botSize - pSize / 2) {
+        bot.score += Math.floor((p.score || 0) * 0.5 + 5);
+        send({ type: 'eat-player', eater: bot.id, victim: p.id });
+      }
+    }
+
+    // AI 主控者本身的玩家也可能被 AI 吃
+    if (botSize > playerSize(myScore) * 1.2 && dist(bot.x, bot.y, myX, myY) < botSize - playerSize(myScore) / 2) {
+      bot.score += Math.floor(myScore * 0.5 + 5);
+      myScore = 0;
+      myX = Math.random() * WORLD_W;
+      myY = Math.random() * WORLD_H;
+      showToast('💀 你被 ' + bot.name + ' 吃掉了！');
+    }
+
     players.set(bot.id, { ...bot, lastUpdate: Date.now() });
   }
   const botList = Array.from(bots.values()).map(b => ({
