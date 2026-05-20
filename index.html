@@ -172,7 +172,7 @@
       <div>分數：<span id="my-score">0</span></div>
     </div>
     <div id="joystick"><div id="joystick-knob"></div></div>
-    <div id="host-toggle">⚙️ 主持人</div>
+    <div id="host-toggle" style="display:none;">⚙️ 主持人</div>
     <div id="host-panel">
       <label>時長(秒)：<input id="duration-input" type="number" value="180" min="30" max="900"></label>
       <button id="start-game-btn">開始遊戲</button>
@@ -194,7 +194,7 @@
    範例：'wss://abc-def-xyz.trycloudflare.com'
    注意：必須是 wss:// 開頭（不是 https://）
    ======================================================== */
-const SERVER_URL = 'wss://ecology-strengths-texts-fundamental.trycloudflare.com';
+const SERVER_URL = 'wss://YOUR-TUNNEL-URL.trycloudflare.com';
 
 const WORLD_W = 3000, WORLD_H = 3000;
 const FOOD_COUNT = 200;
@@ -684,6 +684,14 @@ document.getElementById('end-game-btn').onclick = () => endGame();
 document.getElementById('result-close').onclick = () => {
   document.getElementById('result').classList.remove('show');
 };
+
+// 檢查網址參數，只有主持人模式才顯示主持人按鈕
+// 主持人網址：在網址後面加上 ?host=1
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('host') === '1') {
+  document.getElementById('host-toggle').style.display = 'block';
+  console.log('🎤 主持人模式已啟用');
+}
 
 renderSkinGrid();
 </script>
