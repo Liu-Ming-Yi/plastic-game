@@ -822,6 +822,8 @@ function respawn() {
 }
 
 document.getElementById('death-respawn-btn').onclick = respawn;
+
+document.getElementById('start-btn').onclick = async () => {
   const name = document.getElementById('name-input').value.trim();
   if (!name) { alert('請輸入暱稱'); return; }
   myName = name;
