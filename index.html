@@ -147,6 +147,54 @@
     85% { opacity: 1; }
     100% { opacity: 0; }
   }
+
+  /* 死亡選單 */
+  #death-menu {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(50,0,0,0.92) 0%, rgba(0,10,20,0.95) 100%);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; z-index: 150; color: #fff;
+  }
+  #death-menu.show { display: flex; }
+  .death-content {
+    width: 90%; max-width: 360px;
+    background: rgba(0,30,50,0.8);
+    border: 2px solid rgba(255,80,80,0.4);
+    border-radius: 16px; padding: 24px 20px;
+    text-align: center;
+  }
+  .death-content h2 {
+    font-size: 24px; color: #ff6666; margin-bottom: 8px;
+    text-shadow: 0 2px 10px rgba(255,0,0,0.4);
+  }
+  #death-info {
+    color: #ffaa88; font-size: 13px; margin-bottom: 6px;
+  }
+  .death-score {
+    color: #ffdd44; font-size: 14px; margin-bottom: 18px;
+  }
+  .death-score span { font-size: 20px; font-weight: bold; }
+  .death-section {
+    margin-bottom: 16px; text-align: left;
+  }
+  .death-label {
+    color: #88c5e8; font-size: 12px; margin-bottom: 6px;
+  }
+  #death-name-input {
+    width: 100%; padding: 10px;
+    border: 2px solid #00aaff; border-radius: 8px;
+    background: rgba(0,30,60,0.8); color: #fff;
+    font-size: 15px; outline: none;
+  }
+  #death-respawn-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(90deg, #00aaff, #00ddaa);
+    border: none; border-radius: 10px; color: #fff;
+    font-size: 16px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,200,255,0.4);
+    margin-top: 8px;
+  }
+  #death-respawn-btn:active { transform: scale(0.97); }
 </style>
 </head>
 <body>
@@ -186,6 +234,27 @@
     <div id="result-list"></div>
     <button id="result-close">關閉</button>
   </div>
+
+  <!-- 死亡選單 -->
+  <div id="death-menu">
+    <div class="death-content">
+      <h2>💀 你被吃掉了</h2>
+      <p id="death-info">擊敗你的是：???</p>
+      <p class="death-score">你的分數：<span id="death-score">0</span></p>
+
+      <div class="death-section">
+        <div class="death-label">暱稱</div>
+        <input id="death-name-input" type="text" maxlength="10" placeholder="輸入新暱稱">
+      </div>
+
+      <div class="death-section">
+        <div class="death-label">選擇角色</div>
+        <div class="skin-grid" id="death-skin-grid"></div>
+      </div>
+
+      <button id="death-respawn-btn">🐠 重新進入海洋</button>
+    </div>
+  </div>
 </div>
 <script>
 /* ========================================================
@@ -194,7 +263,7 @@
    範例：'wss://abc-def-xyz.trycloudflare.com'
    注意：必須是 wss:// 開頭（不是 https://）
    ======================================================== */
-const SERVER_URL = 'wss://recorders-cartridges-alphabetical-sky.trycloudflare.com';
+const SERVER_URL = 'wss://divide-ricky-posting-howto.trycloudflare.com';
 
 const WORLD_W = 3000, WORLD_H = 3000;
 const FOOD_COUNT = 200;
@@ -357,11 +426,20 @@ function handleMessage(msg) {
       break;
     case 'eat-player':
       if (msg.victim === myId) {
-        myScore = 0;
-        myX = Math.random() * WORLD_W;
-        myY = Math.random() * WORLD_H;
-        showToast('💀 你被吃掉了！重新開始');
+        // 被吃掉了！顯示死亡選單
+        const eaterPlayer = players.get(msg.eater);
+        const eaterName = eaterPlayer ? eaterPlayer.name : '神秘玩家';
+        showDeathMenu(eaterName, myScore);
       }
+      // 如果被吃的是 AI 且我是主控者，標記 AI 死亡並準備重生
+      if (msg.victim.startsWith('bot_') && iAmBotHost && bots.has(msg.victim)) {
+        const b = bots.get(msg.victim);
+        b.alive = false;
+        b.respawnTimer = 180;
+      }
+      // 任何人被吃，本地畫面都要立即把它標記為死亡，避免「殭屍狀態」
+      const victimP = players.get(msg.victim);
+      if (victimP) victimP.alive = false;
       break;
     case 'eat-food':
       const f = foods.find(f => f.id === msg.foodId);
@@ -413,6 +491,20 @@ function initBots() {
 function updateBots() {
   if (!iAmBotHost) return;
   for (const bot of bots.values()) {
+    // 死亡的 AI 倒數重生
+    if (!bot.alive) {
+      bot.respawnTimer = (bot.respawnTimer || 0) - 1;
+      if (bot.respawnTimer <= 0) {
+        bot.alive = true;
+        bot.score = Math.floor(Math.random() * 20);
+        bot.x = Math.random() * WORLD_W;
+        bot.y = Math.random() * WORLD_H;
+        bot.angle = Math.random() * Math.PI * 2;
+      }
+      players.set(bot.id, { ...bot, lastUpdate: Date.now() });
+      continue;
+    }
+
     bot.targetTimer--;
     if (bot.targetTimer <= 0) {
       let nearestFood = null, minD = Infinity;
@@ -462,12 +554,9 @@ function updateBots() {
     }
 
     // AI 主控者本身的玩家也可能被 AI 吃
-    if (botSize > playerSize(myScore) * 1.2 && dist(bot.x, bot.y, myX, myY) < botSize - playerSize(myScore) / 2) {
+    if (myAlive && botSize > playerSize(myScore) * 1.2 && dist(bot.x, bot.y, myX, myY) < botSize - playerSize(myScore) / 2) {
       bot.score += Math.floor(myScore * 0.5 + 5);
-      myScore = 0;
-      myX = Math.random() * WORLD_W;
-      myY = Math.random() * WORLD_H;
-      showToast('💀 你被 ' + bot.name + ' 吃掉了！');
+      showDeathMenu(bot.name, myScore);
     }
 
     players.set(bot.id, { ...bot, lastUpdate: Date.now() });
@@ -516,6 +605,17 @@ function updateMe() {
     if (mySize > pSize * 1.2 && dist(myX, myY, p.x, p.y) < mySize - pSize / 2) {
       myScore += Math.floor((p.score || 0) * 0.5 + 5);
       send({ type: 'eat-player', eater: myId, victim: p.id });
+
+      // 如果吃到的是 AI，本地直接標記死亡
+      if (p.id.startsWith('bot_')) {
+        p.alive = false;
+        // 通知所有人這隻 AI 死了（讓畫面立即更新）
+        if (iAmBotHost && bots.has(p.id)) {
+          const b = bots.get(p.id);
+          b.alive = false;
+          b.respawnTimer = 180; // 約 3 秒（60fps）
+        }
+      }
     }
   }
 }
@@ -672,7 +772,56 @@ function showResult() {
   document.getElementById('result').classList.add('show');
 }
 
-document.getElementById('start-btn').onclick = async () => {
+/* ========================================================
+   死亡選單
+   ======================================================== */
+function showDeathMenu(killerName, finalScore) {
+  myAlive = false;
+  document.getElementById('death-info').textContent = '擊敗你的是：' + killerName;
+  document.getElementById('death-score').textContent = finalScore;
+  document.getElementById('death-name-input').value = myName;
+
+  // 渲染皮膚選擇
+  const grid = document.getElementById('death-skin-grid');
+  grid.innerHTML = '';
+  SKINS.forEach(skin => {
+    const unlocked = unlockedSkins.includes(skin.id) || bestScore >= skin.unlock;
+    const div = document.createElement('div');
+    div.className = 'skin-item' + (skin.id === mySkin ? ' selected' : '') + (!unlocked ? ' locked' : '');
+    div.innerHTML = skin.emoji + (!unlocked ? `<div class="lock-info">${skin.unlock}分</div>` : '');
+    if (unlocked) {
+      div.onclick = () => {
+        mySkin = skin.id;
+        // 重新渲染
+        grid.querySelectorAll('.skin-item').forEach(el => el.classList.remove('selected'));
+        div.classList.add('selected');
+      };
+    }
+    grid.appendChild(div);
+  });
+
+  // 立刻廣播自己死亡，讓其他玩家畫面上看不到我
+  send({ type: 'pos', id: myId, name: myName, x: myX, y: myY, score: 0, skin: mySkin, alive: false });
+
+  document.getElementById('death-menu').classList.add('show');
+}
+
+function respawn() {
+  // 套用新名字
+  const newName = document.getElementById('death-name-input').value.trim();
+  if (newName) myName = newName;
+
+  // 重設狀態
+  myScore = 0;
+  myX = Math.random() * WORLD_W;
+  myY = Math.random() * WORLD_H;
+  myAlive = true;
+
+  document.getElementById('death-menu').classList.remove('show');
+  showToast('🐠 ' + myName + ' 回到海洋！');
+}
+
+document.getElementById('death-respawn-btn').onclick = respawn;
   const name = document.getElementById('name-input').value.trim();
   if (!name) { alert('請輸入暱稱'); return; }
   myName = name;
