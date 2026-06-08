@@ -2,7 +2,13 @@
    淨海漁夫 — 樣式表 (RWD：手機優先，電腦自動適應)
    ============================================================ */
 
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;          /* 禁止長按跳出選單 */
+  -webkit-user-select: none;            /* 禁止文字選取（手機長按不再反白） */
+  user-select: none;
+}
 
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
