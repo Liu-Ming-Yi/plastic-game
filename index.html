@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>淨海漁夫 · Ocean Cleanup Fisher</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="game-root">
+    <!-- 遊戲畫布 -->
+    <canvas id="game"></canvas>
+
+    <!-- 頂部資訊列 -->
+    <header id="hud-top">
+      <div class="stat" id="stat-coins">
+        <span class="icon">🪙</span><span class="val" id="coins">0</span>
+      </div>
+      <div class="stat" id="stat-hold">
+        <span class="icon">🐟</span><span class="val"><span id="hold">0</span>/<span id="holdMax">10</span></span>
+      </div>
+      <div class="stat eco" id="stat-eco" title="海洋健康度：越乾淨，魚越多、賣價越高">
+        <span class="icon" id="ecoIcon">💚</span>
+        <span class="eco-label">海洋</span>
+        <div class="eco-bar"><div class="eco-fill" id="ecoFill"></div></div>
+        <span class="val" id="ecoVal">100%</span>
+      </div>
+      <div class="stat" id="stat-clock">
+        <span class="icon" id="clockIcon">☀️</span><span class="val" id="clock">06:00</span>
+      </div>
+      <div class="top-btns">
+        <button id="btnSound" class="icon-btn" aria-label="音效">🔊</button>
+        <button id="btnPause" class="icon-btn" aria-label="暫停">⏸</button>
+      </div>
+    </header>
+
+    <!-- 任務提示 -->
+    <div id="quest-banner" class="hidden"></div>
+
+    <!-- 浮動提示文字 (賺錢/事件) -->
+    <div id="toast-layer"></div>
+
+    <!-- 底部控制列 -->
+    <footer id="hud-bottom">
+      <button class="ctrl move" id="btnLeft" aria-label="向左">◀</button>
+      <div class="center-cluster">
+        <button class="ctrl action" id="btnCast">🎣 釣魚</button>
+        <button class="ctrl action small" id="btnScoop" disabled>🗑️ 撈垃圾</button>
+        <button class="ctrl action small" id="btnFilter" disabled>💧 淨化</button>
+      </div>
+      <button class="ctrl move" id="btnRight">▶</button>
+    </footer>
+
+    <!-- 靠岸時的商店按鈕 -->
+    <button id="dockHint" class="hidden">🏪 靠岸了！點此進入商店</button>
+
+    <!-- 商店 / 升級面板 -->
+    <div id="shop-overlay" class="overlay hidden">
+      <div class="panel shop">
+        <div class="panel-head">
+          <h2>🏪 漁港商店</h2>
+          <div class="panel-coins">🪙 <span id="shopCoins">0</span></div>
+          <button class="close" id="shopClose">✕</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="upgrade">⬆️ 升級</button>
+          <button class="tab" data-tab="machine">⚙️ 環保機器</button>
+          <button class="tab" data-tab="info">📖 圖鑑</button>
+        </div>
+        <div class="tab-body" id="shopBody"></div>
+      </div>
+    </div>
+
+    <!-- 暫停選單 -->
+    <div id="pause-overlay" class="overlay hidden">
+      <div class="panel pause-panel">
+        <div class="panel-head">
+          <h2>⏸ 暫停</h2>
+          <button class="close" id="pauseClose">✕</button>
+        </div>
+        <div class="tab-body">
+          <div id="statsBox" class="info-text"></div>
+          <button class="menu-btn" id="btnResume">▶ 繼續遊戲</button>
+          <button class="menu-btn alt" id="btnSound2">🔊 音效：開</button>
+          <button class="menu-btn danger" id="btnReset2">🗑️ 清除存檔重新開始</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 開始畫面 -->
+    <div id="start-overlay" class="overlay">
+      <div class="panel start">
+        <h1>🌊 淨海漁夫</h1>
+        <p class="subtitle">Ocean Cleanup Fisher</p>
+        <p class="desc">
+          開著小船在海上釣魚賺錢，升級你的裝備。<br/>
+          但海洋充滿垃圾與塑膠微粒——<br/>
+          用環保機器淨化海洋，魚群才會回來！
+        </p>
+        <div class="start-controls">
+          <p>🖥️ 電腦：<b>A/D 或 ← →</b> 移動、<b>空白鍵</b> 釣魚</p>
+          <p>📱 手機：使用畫面下方按鈕</p>
+        </div>
+        <button id="btnStart" class="big-btn">▶ 開始遊戲</button>
+        <button id="btnReset" class="text-btn">清除存檔重新開始</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>
