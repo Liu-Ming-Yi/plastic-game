@@ -335,20 +335,12 @@ function toggleMachine(type) {
   updateMachineBtns(); save();
 }
 
-// 在水面按住可往該方向移動（電腦/手機通用）；放開即停止
-let pointerDir = 0;
+// 點海面任意空白處即可釣魚（移動請用左右鍵）
 canvas.addEventListener('pointerdown', e => {
-  if (!running || shopOpen()) return;
-  try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
-  const x = e.clientX;
-  if (x < view.w*0.35) pointerDir = -1;
-  else if (x > view.w*0.65) pointerDir = 1;
-  else pointerDir = 0;
+  if (!running || shopOpen() || paused) return;
+  e.preventDefault();
+  cast();
 });
-const clearPointer = () => { pointerDir = 0; };
-canvas.addEventListener('pointerup', clearPointer);
-canvas.addEventListener('pointercancel', clearPointer);
-canvas.addEventListener('pointerleave', clearPointer);
 
 // ============================================================
 //  釣魚
@@ -388,8 +380,6 @@ function update(dt) {
   let dir = 0;
   if (keys.left) dir -= 1;
   if (keys.right) dir += 1;
-  dir += pointerDir;
-  dir = Math.max(-1, Math.min(1, dir));
   state.boat.vx += dir * acc * dt;
   state.boat.vx *= Math.pow(0.0008, dt);  // 阻力
   if (dir===0 && Math.abs(state.boat.vx)<4) state.boat.vx=0;
