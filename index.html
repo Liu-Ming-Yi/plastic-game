@@ -41,7 +41,8 @@ html, body {
 
 #game-root {
   position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
+  width: 100vw; height: 100vh;   /* 舊瀏覽器後備值 */
+  height: 100dvh;                /* 手機：動態視口高度，排除瀏覽器工具列，底部按鈕才不會被擋住 */
   overflow: hidden;
 }
 
@@ -927,8 +928,14 @@ function resize() {
   canvas.style.height = view.h + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   seaY = view.h * 0.40;
+  // 用實際可見高度釘住整個遊戲容器：避免手機瀏覽器把 100vh 算進工具列區域、
+  // 導致底部左右按鈕被工具列擋住看不到（所有手機瀏覽器通用的保險做法）
+  const root = document.getElementById('game-root');
+  if (root) root.style.height = view.h + 'px';
 }
 window.addEventListener('resize', resize);
+// 手機網址列伸縮、轉向時也重新貼合可見高度
+window.addEventListener('orientationchange', () => setTimeout(resize, 80));
 
 // ============================================================
 //  海浪 / 海面
