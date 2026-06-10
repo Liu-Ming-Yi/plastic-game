@@ -106,17 +106,28 @@ html, body {
 
 /* ---------- 任務橫幅 ---------- */
 #quest-banner {
-  position: absolute; top: calc(58px + var(--safe-top)); left: 50%;
+  position: absolute; top: calc(8px + var(--safe-top)); left: 50%;
   transform: translateX(-50%);
   background: rgba(6, 22, 34, 0.85);
   border: 1px solid var(--accent);
   border-radius: 12px;
   padding: 8px 16px;
   font-size: 14px; font-weight: 600;
-  z-index: 9; text-align: center;
-  max-width: 90vw;
+  z-index: 11; text-align: center;
+  max-width: min(90vw, 440px);
 }
 #quest-banner b { color: var(--gold); }
+.quest-prog {
+  height: 8px; border-radius: 5px;
+  background: rgba(255,255,255,0.18);
+  margin: 7px auto 0; overflow: hidden;
+}
+.quest-prog-fill {
+  height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, #46c0ff, #7ef0a0);
+  transition: width 0.3s ease;
+}
+.quest-prog-num { display: block; font-size: 11px; opacity: 0.85; margin-top: 3px; }
 
 /* ---------- 浮動提示 ---------- */
 #toast-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
@@ -144,8 +155,11 @@ html, body {
   z-index: 10;
 }
 .center-cluster {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex: 1; display: flex; flex-direction: row; flex-wrap: wrap;
+  align-items: flex-end; justify-content: center; gap: 8px;
 }
+/* 釣魚改成「點海面」即可，按鈕不再顯示，避免擋畫面 */
+#btnCast { display: none; }
 .ctrl {
   border: none; cursor: pointer;
   font-family: inherit; font-weight: 800;
@@ -416,7 +430,7 @@ html, body {
     </footer>
 
     <!-- 靠岸時的商店按鈕 -->
-    <button id="dockHint" class="hidden">🏪 靠岸了！點此進入商店</button>
+    <button id="dockHint" class="hidden">💰 靠岸了！點此賣魚 / 逛商店</button>
 
     <!-- 商店 / 升級面板 -->
     <div id="shop-overlay" class="overlay hidden">
@@ -524,7 +538,7 @@ const DEFS = {
 };
 const depthFor  = l => 130 + (l - 1) * 70;     // 釣線可達深度(螢幕px)
 const holdFor   = l => 8 + (l - 1) * 6;        // 魚艙容量
-const speedMul  = l => 1 + (l - 1) * 0.30;     // 船速倍率（每級 +30%）
+const speedMul  = l => 1 + (l - 1) * 0.45;     // 船速倍率（每級 +45%，升級更有感）
 const descOf = {
   rod:   l => `釣線深度等級 ${l}，能釣到更深、更值錢的魚`,
   speed: l => `船速 +${Math.round((speedMul(l)-1)*100)}%`,
@@ -543,9 +557,12 @@ function machineOwned(type){
 }
 // 可立即放置的數量（全新 + 半舊收回的）
 function machineAvail(type){ return state.inv[type] + state.spares[type].length; }
-// 污染擴張參數（緩慢）：未淨化海域逐漸變寬、變濃；淨化機速度仍快過它
-const POLLUTION_EXPAND = 2;     // px/秒（每側）
-const POLLUTION_CREEP  = 0.002; // 濃度/秒
+// 污染擴張參數（緩慢）：未淨化海域會慢慢變寬、濃度也微幅回升；
+// 但淨化機速度（0.018/秒）遠快於回升，且已淨化(p≈0)的海域不會再擴張，仍可穩定全清通關
+const POLLUTION_EXPAND = 0.7;    // px/秒（每側）— 非常緩慢地變寬
+const POLLUTION_CREEP  = 0.0005; // 濃度/秒 — 極微幅回升（淨化機快 36 倍，清理時穩定下降）
+// 「已淨化」門檻：濃度低於此值就視為完全乾淨（畫面也不再畫污染），讓「看起來乾淨」＝「任務算乾淨」
+const CLEAN_P = 0.04;
 
 // ---------- 魚種 ----------
 const FISH_TYPES = [
@@ -592,6 +609,7 @@ function freshState() {
 
 // ---------- 不需存檔的執行期狀態 ----------
 let paused = false;
+let questPollT = 0;   // 任務自動巡檢計時：讓被動達成（如健康度回升）的任務也能即時更新
 let combo = 0, comboTimer = 0;
 let fx = [];          // 特效粒子（水花、收線星光）
 let allCleanCelebrated = false;  // 是否已慶祝過全海域淨化
@@ -600,20 +618,23 @@ let tutBase = 0;      // 自動推進步驟的基準值
 let rotateDismissed = false;  // 是否已關閉橫向提示
 
 // ---------- 任務 ----------
+const allZonesClean = s => s.zones.every(z => z.p <= CLEAN_P);
+const cleanedZones  = s => s.zones.filter(z => z.p <= CLEAN_P).length;
+// 每個任務都有 prog:s=>[目前, 目標]，用來畫進度條
 const QUESTS = [
-  { text:'釣到 3 條魚',                 done:s=>s.stats.caught>=3,  reward:30 },
-  { text:'把魚開到右邊的漁港賣掉',      done:s=>s.stats.sold>=1,    reward:30 },
-  { text:'購買「撈取機」並放到海上撈垃圾',  done:s=>machineOwned('scoop')>0, reward:60 },
-  { text:'撈起 5 件海洋垃圾',           done:s=>s.stats.trash>=5,   reward:60 },
-  { text:'累積總收入達到 300 元',       done:s=>s.stats.earned>=300, reward:80 },
-  { text:'把釣竿升級到 Lv 3，釣更深的魚', done:s=>s.up.rod>=3,       reward:80 },
-  { text:'到污染區釣到 3 條「污染魚」（賣不了好價錢，所以要淨化海洋）', done:s=>s.stats.polluted>=3, reward:80 },
-  { text:'購買「淨化機」放進深色污染區',    done:s=>machineOwned('filter')>0, reward:100 },
-  { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1, reward:150 },
-  { text:'撈起累計 25 件海洋垃圾',      done:s=>s.stats.trash>=25,  reward:120 },
-  { text:'淨化 2 個污染海域',           done:s=>s.stats.cleaned>=2, reward:200 },
-  { text:'讓海洋健康度回升到 65%',      done:s=>s.eco>=65,          reward:150 },
-  { text:'最終目標：淨化全部 4 個污染海域！', done:s=>s.zones.every(z=>z.p<=0), reward:300 },
+  { text:'釣到 3 條魚',                 done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
+  { text:'把船開到右邊的漁港把魚賣掉',  done:s=>s.stats.sold>=1,    prog:s=>[s.stats.sold,1],     reward:30 },
+  { text:'購買「撈取機」並放到海上撈垃圾',  done:s=>machineOwned('scoop')>0, prog:s=>[machineOwned('scoop'),1], reward:60 },
+  { text:'撈起 5 件海洋垃圾',           done:s=>s.stats.trash>=5,   prog:s=>[s.stats.trash,5],    reward:60 },
+  { text:'累積總收入達到 300 元',       done:s=>s.stats.earned>=300, prog:s=>[Math.floor(s.stats.earned),300], reward:80 },
+  { text:'把釣竿升級到 Lv 3，釣更深的魚', done:s=>s.up.rod>=3,       prog:s=>[s.up.rod,3],         reward:80 },
+  { text:'到污染區釣到 3 條「污染魚」（賣不了好價錢，所以要淨化海洋）', done:s=>s.stats.polluted>=3 || allZonesClean(s), prog:s=>[s.stats.polluted,3], reward:80 },
+  { text:'購買「淨化機」放進深色污染區',    done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
+  { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:150 },
+  { text:'撈起累計 25 件海洋垃圾',      done:s=>s.stats.trash>=25,  prog:s=>[s.stats.trash,25],   reward:120 },
+  { text:'淨化 2 個污染海域',           done:s=>s.stats.cleaned>=2 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),2], reward:200 },
+  { text:'讓海洋健康度回升到 65%',      done:s=>s.eco>=65,          prog:s=>[Math.round(s.eco),65], reward:150 },
+  { text:'最終目標：淨化全部 4 個污染海域！', done:s=>allZonesClean(s), prog:s=>[cleanedZones(s),s.zones.length], reward:300 },
 ];
 
 // ---------- 引導教學步驟 ----------
@@ -621,7 +642,7 @@ const TUT = [
   { text:'歡迎來到《淨海漁夫》！🎣 你是一位漁夫，要靠賣魚賺錢，並把被污染的海洋清乾淨。', manual:true },
   { text:'先學移動：按住左下 ◀ 或右下 ▶ 開船（電腦可用 A／D 或方向鍵）。試著移動看看！', enter:s=>tutBase=s.boat.x, auto:s=>Math.abs(s.boat.x - tutBase) > 80 },
   { text:'釣魚：直接<b>點海面</b>任意處（電腦可按空白鍵）放下釣竿。釣到一條魚試試！', enter:s=>tutBase=s.stats.caught, auto:s=>s.stats.caught > tutBase },
-  { text:'賣魚換錢：魚要開到<b>最右邊的漁港</b>才賣得掉。一直往右開，靠岸後點海面開啟商店賣魚！', enter:s=>tutBase=s.stats.sold, auto:s=>s.stats.sold > tutBase },
+  { text:'賣魚換錢：要把<b>船</b>開到<b>最右邊的漁港</b>才賣得掉。一直往右開，靠岸後點下方金色的<b>「💰 賣魚 / 逛商店」</b>按鈕，就會賣魚並開啟商店！', enter:s=>tutBase=s.stats.sold, auto:s=>s.stats.sold > tutBase },
   { text:'淨化海洋：<b>深色海域</b>是塑膠微粒污染區。魚也會游進去，但在那釣到的是<b>污染魚</b>，賣出只值 5～10 元！到商店「環保機器」分頁買<b>淨化機</b>，開回污染區，用下方 💧 鍵放下，它會自動淨化。', manual:true },
   { text:'⚠️ 注意：機器有<b>耐久度</b>，用約 30 秒就會<b>損壞消失</b>，要再買新的；而沒處理的污染區會<b>慢慢擴大</b>，動作要快！', manual:true },
   { text:'撈垃圾機(🗑️)同理：放在海面會自動撈起漂浮垃圾換錢。機器可放多台，靠近自己的機器再按一次可收回（耐久會保留）換位置。', manual:true },
@@ -962,7 +983,7 @@ function update(dt) {
   updateFx(dt);
 
   // 船移動
-  const acc = 850, max = 250 * speedMul(state.up.speed);
+  const acc = 1050, max = 290 * speedMul(state.up.speed);
   let dir = 0;
   if (keys.left) dir -= 1;
   if (keys.right) dir += 1;
@@ -992,12 +1013,16 @@ function update(dt) {
   // 夜晚切換時清掉不合時宜的魚
   if (state.fish.length>target+12) state.fish.splice(0, state.fish.length-target);
 
-  // 垃圾持續從污染海域產生
-  const trashTarget = Math.round(state.zones.reduce((a,z)=>a+z.p* (z.x1-z.x0)/500, 0)) + 4;
+  // 海面一律維持一定數量的漂浮垃圾（供撈取機與任務使用）；污染區附近會更多
+  const anyPollution = state.zones.some(z => z.p > 0.02);
+  const trashTarget = 6 + Math.round(state.zones.reduce((a,z)=>a+z.p* (z.x1-z.x0)/500, 0));
   if (state.trash.length < trashTarget && Math.random()<0.6) {
-    // 偏好生在污染區附近
-    const z = state.zones[(Math.random()*state.zones.length)|0];
-    spawnTrash(z.x0 + Math.random()*(z.x1-z.x0));
+    if (anyPollution) {                         // 有污染 → 偏好生在污染區附近
+      const z = state.zones[(Math.random()*state.zones.length)|0];
+      spawnTrash(z.x0 + Math.random()*(z.x1-z.x0));
+    } else {                                    // 無污染 → 隨機散佈海面
+      spawnTrash();
+    }
   }
   for (const tr of state.trash){ tr.ph += dt*1.5; tr.worldX += tr.drift*dt; }
 
@@ -1035,6 +1060,7 @@ function update(dt) {
         if (m.worldX > z.x0-R && m.worldX < z.x1+R){
           const before=z.p;
           z.p = Math.max(0, z.p - MACHINE.filter.rate*dt);
+          if (z.p <= CLEAN_P) z.p = 0;   // 低於門檻 → 直接視為完全淨化（與畫面一致，避免殘留看不見的污染卡任務）
           if (before>0 && z.p===0){
             state.stats.cleaned++;
             toast(view.w/2, view.h*0.45, '✨ 海域淨化完成！魚群回來了', 'eco');
@@ -1058,8 +1084,13 @@ function update(dt) {
 
   // 海洋健康度：依污染與垃圾平滑變化
   const avgP = state.zones.length ? state.zones.reduce((a,z)=>a+z.p,0)/state.zones.length : 0;
-  const ecoTarget = Math.max(0, Math.min(100, 100 - avgP*55 - Math.min(state.trash.length,30)*1.1));
+  // 健康度只由「污染區濃度」決定（不受漂浮垃圾數量影響，避免數值忽上忽下）
+  const ecoTarget = Math.max(0, Math.min(100, 100 - avgP*65));
   state.eco += (ecoTarget - state.eco) * Math.min(1, dt*0.6);
+
+  // 任務自動巡檢（每秒一次）：被動達成的任務（如健康度回升、全海域淨化）也能即時推進
+  questPollT += dt;
+  if (questPollT >= 1) { questPollT = 0; checkQuest(); checkAllClean(); }
 
   updateHUD();
 }
@@ -1109,18 +1140,22 @@ function updateLine(dt) {
 
 function deliverFish(f) {
   const polluted = pollutionAt(state.boat.x) > 0.3;   // 在污染區釣到 → 污染魚（賣不了好價）
-  // Combo 連釣加成（最高 +50%）
   combo++; comboTimer = 6;
-  const cmult = 1 + Math.min(combo-1, 5) * 0.1;
-  const value = Math.round(f.t.value * cmult);          // 乾淨魚的售價基準（賣出時再 ×行情）
+  const value = f.t.value;                              // 魚價就是基準價（賣出時再 ×行情），不再有倍率
   state.hold.push({ key:f.t.key, value, polluted });
   state.stats.caught++;
   if (polluted) state.stats.polluted++;
+  // 連釣獎勵：連續釣到就「直接給少量金幣」（不影響魚價，簡單明瞭）
+  let comboBonus = 0;
+  if (!polluted && combo >= 2) {
+    comboBonus = Math.min(combo, 6) * 2;               // 第2連 +4、第3連 +6 … 最多 +12
+    state.coins += comboBonus; state.stats.earned += comboBonus;
+  }
   const sx = state.boat.x - cam();
   const sy = surfaceY(state.boat.x,state.time)-30;
   addSparkle(state.boat.x, surfaceY(state.boat.x,state.time));
   if (polluted) { toast(sx, sy, '🤢 污染的'+f.t.name+f.t.emoji, 'warn'); sfx('trash'); }
-  else { toast(sx, sy, '釣到 '+f.t.name+' '+f.t.emoji+(cmult>1?` x${combo}🔥`:''), 'eco'); sfx('catch'); }
+  else { toast(sx, sy, '釣到 '+f.t.name+' '+f.t.emoji+(comboBonus>0?`　連釣 +${comboBonus}🪙`:''), 'eco'); sfx('catch'); }
   checkQuest(); save();
 }
 
@@ -1160,13 +1195,29 @@ function checkQuest() {
   if (advanced) save();
   showQuest();
 }
+let _lastQuestHTML = '';
 function showQuest() {
   const el = document.getElementById('quest-banner');
-  if (tutStep >= 0) { el.classList.add('hidden'); return; }   // 教學進行中先隱藏任務橫幅
+  if (tutStep >= 0) { el.classList.add('hidden'); _lastQuestHTML=''; return; }   // 教學進行中先隱藏任務橫幅
   const q = QUESTS[state.questIdx];
-  if (!q){ el.classList.add('hidden'); return; }
+  if (!q){ el.classList.add('hidden'); _lastQuestHTML=''; return; }
   el.classList.remove('hidden');
-  el.innerHTML = `🎯 任務：<b>${q.text}</b>`;
+  let html;
+  // 最終任務且已達成 → 顯示通關訊息，而不是繼續掛著「淨化海洋」
+  if (state.questIdx === QUESTS.length - 1 && q.done(state)) {
+    html = `🎉 <b>恭喜通關！海洋已全部淨化！</b>`;
+  } else {
+    let bar = '';
+    if (q.prog) {
+      const [curRaw, max] = q.prog(state);
+      const cur = Math.max(0, Math.min(curRaw, max));
+      const pct = max ? (cur / max * 100) : 0;
+      bar = `<div class="quest-prog"><div class="quest-prog-fill" style="width:${pct}%"></div></div>`
+          + `<span class="quest-prog-num">${cur} / ${max}</span>`;
+    }
+    html = `<div class="quest-title">🎯 任務：<b>${q.text}</b></div>${bar}`;
+  }
+  if (html !== _lastQuestHTML) { _lastQuestHTML = html; el.innerHTML = html; }   // 內容沒變就不重寫 DOM
 }
 
 // ============================================================
@@ -1256,7 +1307,8 @@ function render() {
   drawCombo();
 
   // 靠岸提示
-  document.getElementById('dockHint').classList.toggle('hidden', !nearDock() || !running);
+  const hideDock = !nearDock() || !running;
+  if (_hudPrev.hideDock !== hideDock){ _hudPrev.hideDock = hideDock; (HUD._dockHint || (HUD._dockHint = document.getElementById('dockHint'))).classList.toggle('hidden', hideDock); }
 }
 
 function drawCelestial(h, W, H) {
@@ -1350,15 +1402,16 @@ function drawNavChip(x, y, label, sub, bg, fg) {
 // Combo 連釣顯示
 function drawCombo() {
   if (combo < 2 || comboTimer <= 0) return;
-  const pct = Math.min(combo-1, 5) * 10;
   ctx.save();
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.font='bold 22px sans-serif';
   const alpha = Math.min(1, comboTimer/1.5);
   ctx.fillStyle=`rgba(255,170,40,${alpha})`;
-  ctx.fillText(`🔥 連釣 x${combo}  +${pct}%`, view.w/2, seaY*0.45);
+  // 任務橫幅已移到最上方，這裡往上移到海面上方、與橫幅之間留出空間
+  const comboY = seaY * 0.7;
+  ctx.fillText(`🔥 連釣 ${combo} 連！`, view.w/2, comboY);
   // 計時條
-  const bw=120, bx=view.w/2-bw/2, by=seaY*0.45+18;
+  const bw=120, bx=view.w/2-bw/2, by=comboY+18;
   ctx.fillStyle=`rgba(255,255,255,${0.2*alpha})`; ctx.fillRect(bx,by,bw,4);
   ctx.fillStyle=`rgba(255,170,40,${alpha})`; ctx.fillRect(bx,by,bw*(comboTimer/6),4);
   ctx.restore();
@@ -1493,7 +1546,7 @@ function drawShell(x, gy) {
 
 function drawPollution(c, t) {
   for (const z of state.zones) {
-    if (z.p<=0.04) continue;
+    if (z.p<=CLEAN_P) continue;
     const x0=z.x0-c, x1=z.x1-c;
     if (x1<-20||x0>view.w+20) continue;
     ctx.save();
@@ -1539,7 +1592,8 @@ function fishEye(ex, ey, r) {
 function drawFishBody(ty, ph) {
   const s = ty.size || 1;
   const col = ty.color;
-  const dark = lerpHex(col, '#0a2733', 0.42);
+  // 暗色只跟魚種顏色有關，快取在魚種物件上，避免每幀對每條魚重複解析色碼字串
+  const dark = ty._dark || (ty._dark = lerpHex(col, '#0a2733', 0.42));
   const tw = Math.sin(ph) * 2;   // 尾巴擺動
   ctx.lineCap='round';
   switch (ty.shape) {
@@ -1823,31 +1877,53 @@ function drawFishCrate(px, gy) {
 // ============================================================
 //  HUD / 商店 UI
 // ============================================================
+// 快取 HUD 元素參照與上次寫入的值，避免每幀重複 getElementById 與不必要的 DOM 寫入（reflow）造成卡頓
+const HUD = {
+  coins:    document.getElementById('coins'),
+  hold:     document.getElementById('hold'),
+  holdMax:  document.getElementById('holdMax'),
+  statHold: document.getElementById('stat-hold'),
+  ecoFill:  document.getElementById('ecoFill'),
+  ecoVal:   document.getElementById('ecoVal'),
+  ecoIcon:  document.getElementById('ecoIcon'),
+  clock:    document.getElementById('clock'),
+  clockIcon:document.getElementById('clockIcon'),
+  btnCast:  document.getElementById('btnCast'),
+  btnScoop: document.getElementById('btnScoop'),
+  btnFilter:document.getElementById('btnFilter'),
+};
+const _hudPrev = {};
+function setText(el, key, val){ if (_hudPrev[key] !== val){ _hudPrev[key] = val; el.textContent = val; } }
 function updateHUD() {
-  document.getElementById('coins').textContent = Math.floor(state.coins);
-  document.getElementById('hold').textContent = state.hold.length;
-  document.getElementById('holdMax').textContent = holdFor(state.up.hold);
+  setText(HUD.coins,   'coins',   Math.floor(state.coins));
+  setText(HUD.hold,    'hold',    state.hold.length);
+  setText(HUD.holdMax, 'holdMax', holdFor(state.up.hold));
   // 魚艙滿了變紅
-  document.getElementById('stat-hold').classList.toggle('full', state.hold.length >= holdFor(state.up.hold));
+  const full = state.hold.length >= holdFor(state.up.hold);
+  if (_hudPrev.full !== full){ _hudPrev.full = full; HUD.statHold.classList.toggle('full', full); }
   const eco=Math.round(state.eco);
-  document.getElementById('ecoFill').style.width = eco+'%';
-  document.getElementById('ecoVal').textContent = eco+'%';
-  document.getElementById('ecoIcon').textContent = eco>=66 ? '💚' : eco>=33 ? '💛' : '💔';
+  if (_hudPrev.eco !== eco){
+    _hudPrev.eco = eco;
+    HUD.ecoFill.style.width = eco+'%';
+    HUD.ecoVal.textContent  = eco+'%';
+    HUD.ecoIcon.textContent = eco>=66 ? '💚' : eco>=33 ? '💛' : '💔';
+  }
   // 時鐘
   const h=(state.time/DAY_LEN)*24; const hh=Math.floor(h), mm=Math.floor((h-hh)*60);
-  document.getElementById('clock').textContent = String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
-  document.getElementById('clockIcon').textContent = isNight()?'🌙':'☀️';
+  setText(HUD.clock,     'clock',     String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'));
+  setText(HUD.clockIcon, 'clockIcon', isNight()?'🌙':'☀️');
   // 釣魚鈕：靠岸時變成「賣魚」
-  document.getElementById('btnCast').textContent = nearDock() ? '💰 賣魚 / 商店' : '🎣 釣魚';
+  setText(HUD.btnCast, 'btnCast', nearDock() ? '💰 賣魚 / 商店' : '🎣 釣魚');
   updateMachineBtns();   // 每幀更新（讓「靠近可收回」即時反映）
 }
 function updateMachineBtns() {
-  const bs=document.getElementById('btnScoop'), bf=document.getElementById('btnFilter');
   const near = type => state.placed.some(p=>p.type===type && Math.abs(p.worldX-state.boat.x)<70);
-  bs.textContent = near('scoop') ? '🗑️ 收回撈取機' : `🗑️ 放撈取機 (${machineAvail('scoop')})`;
-  bf.textContent = near('filter') ? '💧 收回淨化機' : `💧 放淨化機 (${machineAvail('filter')})`;
-  bs.disabled = !(machineAvail('scoop')>0 || near('scoop'));
-  bf.disabled = !(machineAvail('filter')>0 || near('filter'));
+  const ns = near('scoop'), nf = near('filter');
+  setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回撈取機' : `🗑️ 放撈取機 (${machineAvail('scoop')})`);
+  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回淨化機' : `💧 放淨化機 (${machineAvail('filter')})`);
+  const sd = !(machineAvail('scoop')>0 || ns), fd = !(machineAvail('filter')>0 || nf);
+  if (_hudPrev.scoopDis !== sd){ _hudPrev.scoopDis = sd; HUD.btnScoop.disabled = sd; }
+  if (_hudPrev.filterDis !== fd){ _hudPrev.filterDis = fd; HUD.btnFilter.disabled = fd; }
 }
 
 let toastCount=0;
@@ -1949,7 +2025,7 @@ function buyMachine(type){
 }
 function checkAllClean(){
   if (allCleanCelebrated) return;
-  if (state.zones.every(z=>z.p<=0)){
+  if (state.zones.every(z=>z.p<=CLEAN_P)){
     allCleanCelebrated = true;
     const bonus = 200;
     state.coins += bonus; state.stats.earned += bonus;
@@ -1965,7 +2041,7 @@ function renderInfo(){
     <h3>🌊 玩法重點</h3>
     越深的海域有越值錢的魚，升級<b>釣竿</b>才釣得到。<br/>
     深色海域代表<b>塑膠微粒污染</b>，魚也會游進去，但在污染區釣到的是<b>「污染魚」</b>，賣出時只值 <b>5～10 元</b>，所以要把海洋清乾淨才能賣好價。<br/>
-    ⚠️ 沒處理的污染區會<b>慢慢擴大、變濃</b>；已淨化的海域則不會再惡化。<br/>
+    ⚠️ 沒處理的污染區會<b>慢慢變寬、變濃</b>，要趁早淨化；用淨化機清乾淨後就會<b>永久保持乾淨</b>，不會再惡化。<br/>
     🎯 <b>目標：淨化全部 4 個污染海域！</b> 在商店買<b>淨化機</b>,回海上把它<b>放進</b>污染區就會自動淨化;買<b>撈取機</b>放在海面自動撈垃圾。可放多台、也能收回換位置。<br/>
     🔧 機器有<b>耐久度</b>，用一段時間會損壞消失，要記得補買新的。<br/>
     <b>海洋健康度</b>越高，魚越多、賣價越好。🌙 夜晚會出現魷魚等夜行性高價魚種。
@@ -2065,10 +2141,10 @@ function startGame(){
   // 初始魚與垃圾
   for(let i=0;i<24;i++) spawnFish();
   for(let i=0;i<10;i++) spawnTrash();
-  updateMachineBtns(); updateHUD(); showQuest(); updateSoundUI();
+  updateMachineBtns(); updateHUD(); checkQuest(); updateSoundUI();
   initAudio();   // 開始遊戲是使用者手勢，可安全建立音訊
   paused = false;
-  allCleanCelebrated = state.zones.every(z=>z.p<=0);   // 已全淨化的存檔不重複慶祝
+  allCleanCelebrated = state.zones.every(z=>z.p<=CLEAN_P);   // 已全淨化的存檔不重複慶祝
   document.getElementById('start-overlay').classList.add('hidden');
   checkOrientation();
   if (!state.tutDone) startTutorial(); else { tutStep = -1; showQuest(); }
