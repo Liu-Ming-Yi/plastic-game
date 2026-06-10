@@ -383,6 +383,37 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* ---------- 通關結算畫面 ---------- */
+.end-panel { max-width: 440px; text-align: center; }
+.end-head { font-size: 24px; font-weight: 800; margin: 2px 0 8px; }
+.end-story { font-size: 14px; line-height: 1.7; opacity: 0.92; margin-bottom: 12px; }
+.end-story b { color: var(--gold); }
+.rank-badge { font-size: 64px; font-weight: 900; line-height: 1; margin: 4px 0; }
+.rank-badge.rank-S { color: #ffd24a; text-shadow: 0 0 18px rgba(255,210,74,0.6); }
+.rank-badge.rank-A { color: #7ef0a0; text-shadow: 0 0 14px rgba(126,240,160,0.4); }
+.rank-badge.rank-B { color: #6fb5ff; }
+.rank-badge.rank-C { color: #ffb38a; }
+.rank-comment { font-size: 14px; margin-bottom: 14px; opacity: 0.95; line-height: 1.6; }
+.rank-comment b { color: var(--gold); }
+.end-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px;
+  font-size: 13px; text-align: left;
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 16px;
+}
+.end-stats .es-row { display: flex; justify-content: space-between; gap: 8px; }
+.end-stats b { color: var(--gold); }
+.ec-title { font-size: 15px; color: var(--accent); margin: 4px 0 10px; }
+.ec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.ec-item {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,204,68,0.35);
+  border-radius: 10px; padding: 8px 4px;
+}
+.ec-emoji { font-size: 30px; line-height: 1.1; }
+.ec-name { font-size: 11px; line-height: 1.3; margin-top: 3px; opacity: 0.9; }
+.ec-cnt { font-size: 11px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.ec-empty { font-size: 13px; opacity: 0.7; margin-bottom: 16px; line-height: 1.6; }
+
 /* ---------- 常駐委託需求小卡 ---------- */
 #commission-hud {
   max-width: 100%;
@@ -581,6 +612,13 @@ html, body {
       </div>
     </div>
 
+    <!-- 通關結算畫面（考核評等 + 海廢文創成果展） -->
+    <div id="end-overlay" class="overlay hidden">
+      <div class="panel end-panel">
+        <div class="tab-body" id="endBody"></div>
+      </div>
+    </div>
+
     <!-- 開場故事畫面（方框 + ◀▶ 翻頁） -->
     <div id="start-overlay" class="overlay">
       <div class="panel start story-panel">
@@ -731,6 +769,7 @@ function freshState() {
     line: { active:false, phase:'idle', depth:0, caught:null },
     commissionIdx: 0,         // 目前文創委託編號（循環）
     commissionProgress: {},   // 目前委託「已先繳交」的材料數 {key:已交數}
+    commDone: {},             // 已完成的文創委託 {委託index: 完成次數} — 給結算「成果展」用
     stats: { caught:0, delivered:0, commissions:0, trash:0, cleaned:0, earned:0, rescued:0 },
     questIdx: 0,
     time: time,
@@ -827,7 +866,7 @@ function save() {
       coins: state.coins, up: state.up, eco: state.eco,
       inv: state.inv, spares: state.spares, placed: state.placed,
       zones: state.zones, stats: state.stats, questIdx: state.questIdx,
-      commissionIdx: state.commissionIdx, commissionProgress: state.commissionProgress,
+      commissionIdx: state.commissionIdx, commissionProgress: state.commissionProgress, commDone: state.commDone,
       boatX: state.boat.x, time: state.time, day: state.day, muted: state.muted, tutDone: state.tutDone,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -867,6 +906,7 @@ function load() {
     if (d.stats) state.stats = Object.assign(state.stats, d.stats);
     state.commissionIdx = d.commissionIdx ?? 0;
     state.commissionProgress = (d.commissionProgress && typeof d.commissionProgress==='object') ? d.commissionProgress : {};
+    state.commDone = (d.commDone && typeof d.commDone==='object') ? d.commDone : {};
     state.questIdx = d.questIdx ?? 0;
     state.boat.x = d.boatX ?? 400;
     state.time = d.time ?? time;
@@ -2322,6 +2362,12 @@ function renderCommissionHud() {
     if (_hudPrev.comHtml !== '__hidden') { _hudPrev.comHtml = '__hidden'; el.classList.add('hidden'); }
     return;
   }
+  // 海洋全淨化後不再生成垃圾 → 委託無法再完成，改顯示收尾訊息、不再催（避免永遠卡著「還需 ×N」）
+  if (allZonesClean(state)) {
+    const html = `🎨 委託：<b>海洋已淨化，委託任務告一段落 ✅</b>`;
+    if (_hudPrev.comHtml !== html) { _hudPrev.comHtml = html; el.innerHTML = html; el.classList.remove('hidden'); }
+    return;
+  }
   const com = currentCommission(), prog = state.commissionProgress;
   const parts = [];
   for (const k in com.need) {
@@ -2448,8 +2494,62 @@ function checkAllClean(){
     const bonus = 200;
     state.coins += bonus; state.stats.earned += bonus;
     toast(view.w/2, view.h*0.4, `🎉 全海域淨化完成！海洋恢復乾淨，獎勵 +${bonus}🪙`, 'coin');
-    sfx('sell');
+    sfx('sell'); save();
+    setTimeout(showSettlement, 1500);   // 慶祝動畫之後，跳出通關結算畫面
   }
+}
+
+// 稽查員考核評等：依「清得多快、救了幾隻、完成幾筆委託」給 S/A/B/C
+function computeRank(){
+  let pts = 0;
+  pts += Math.min(state.stats.rescued, 3) * 2;       // 拯救生物 每隻 +2（最多 +6）
+  pts += Math.min(state.stats.commissions, 6) * 1;   // 完成委託 每筆 +1（最多 +6）
+  if (state.day <= 2) pts += 6;                       // 通關速度（用幾天清完全部）
+  else if (state.day <= 4) pts += 4;
+  else if (state.day <= 6) pts += 2;
+  let rank, comment;
+  if (pts >= 13){ rank='S'; comment='傳奇稽查員！海洋因你煥然一新，長官親自頒獎。'; }
+  else if (pts >= 9){ rank='A'; comment='表現優異！這片海洋以你為榮。'; }
+  else if (pts >= 5){ rank='B'; comment='做得不錯，海洋明顯變乾淨了。'; }
+  else { rank='C'; comment='任務達成！下次救多一點海龜、多接委託可拿更高評等。'; }
+  return { rank, comment, pts };
+}
+
+// 通關結算畫面：考核評等 + 海廢文創「成果展」彩蛋
+function showSettlement(){
+  const r = computeRank();
+  const statRow = (label,val)=>`<div class="es-row"><span>${label}</span><b>${val}</b></div>`;
+  // 成果展：列出這場完成過的文創委託作品（彩蛋）
+  const ecItems = Object.keys(state.commDone).map(ci=>{
+    const c = COMMISSIONS[+ci]; const n = state.commDone[ci];
+    if (!c || n<=0) return '';
+    return `<div class="ec-item"><div class="ec-emoji">${c.emoji}</div><div class="ec-name">${c.title}</div><div class="ec-cnt">×${n}</div></div>`;
+  }).join('');
+  const showcase = ecItems
+    ? `<div class="ec-grid">${ecItems}</div>`
+    : `<div class="ec-empty">這次沒有完成海廢文創委託～下次試著把撈到的垃圾變成文創作品吧！</div>`;
+  document.getElementById('endBody').innerHTML = `
+    <div class="end-head">🏆 通關結算</div>
+    <div class="end-story">海洋恢復了，魚群回來、漁民找回生計——你立功<b>調回台北</b>了！</div>
+    <div class="rank-badge rank-${r.rank}">${r.rank}</div>
+    <div class="rank-comment">稽查員考核評等：<b>${r.rank}</b>　${r.comment}</div>
+    <div class="end-stats">
+      ${statRow('🗓️ 花費天數', state.day + ' 天')}
+      ${statRow('🪙 總收入', Math.floor(state.stats.earned))}
+      ${statRow('🎣 釣起垃圾', state.stats.caught + ' 件')}
+      ${statRow('🗑️ 機器清除', state.stats.trash + ' 件')}
+      ${statRow('🐢 拯救生物', state.stats.rescued + ' 隻')}
+      ${statRow('🎨 完成委託', state.stats.commissions + ' 筆')}
+    </div>
+    <h3 class="ec-title">🎨 你的海廢文創成果展</h3>
+    ${showcase}
+    <button id="btnReplay" class="big-btn">🔄 再玩一次</button>
+    <button id="btnEndClose" class="menu-btn alt" style="margin-top:10px">看看乾淨的海 🌊</button>
+  `;
+  document.getElementById('btnReplay').addEventListener('click', ()=>{ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} location.reload(); });
+  document.getElementById('btnEndClose').addEventListener('click', ()=>{ document.getElementById('end-overlay').classList.add('hidden'); paused=false; });
+  document.getElementById('end-overlay').classList.remove('hidden');
+  paused = true;
 }
 // ---------- 海廢文創小舖：委託 + 賤價賣垃圾 ----------
 function trashCounts(){
@@ -2518,6 +2618,8 @@ function deliverCommission(){
   if (complete){
     const reward = Math.round(com.reward * incomeMul());
     state.coins += reward; state.stats.earned += reward; state.stats.commissions++;
+    const ci = state.commissionIdx % COMMISSIONS.length;   // 記錄「完成了哪一件作品」給結算成果展
+    state.commDone[ci] = (state.commDone[ci] || 0) + 1;
     state.commissionIdx = (state.commissionIdx + 1) % COMMISSIONS.length;
     state.commissionProgress = {};
     sfx('sell');
