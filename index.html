@@ -110,17 +110,24 @@ html, body {
 .stat.full .val { color: var(--danger); }
 @keyframes fullBlink { 50% { background: rgba(255,94,108,0.25); } }
 
-/* ---------- 任務橫幅 ---------- */
-#quest-banner {
+/* ---------- 頂部資訊堆疊：任務 + 委託 垂直排列，永不重疊（直向手機優先） ---------- */
+#top-info {
   position: absolute; top: calc(58px + var(--safe-top)); left: 50%;
   transform: translateX(-50%);
+  width: min(92vw, 440px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  z-index: 12; pointer-events: none;
+}
+
+/* ---------- 任務橫幅 ---------- */
+#quest-banner {
   background: rgba(6, 22, 34, 0.85);
   border: 1px solid var(--accent);
   border-radius: 12px;
   padding: 8px 16px;
   font-size: 14px; font-weight: 600;
-  z-index: 11; text-align: center;
-  max-width: min(90vw, 440px);
+  text-align: center;
+  max-width: 100%;
 }
 #quest-banner b { color: var(--gold); }
 .quest-prog {
@@ -375,13 +382,13 @@ html, body {
 
 /* ---------- 常駐委託需求小卡 ---------- */
 #commission-hud {
-  position: absolute; left: 12px; top: calc(104px + var(--safe-top));
-  z-index: 11; max-width: min(72vw, 360px);
+  max-width: 100%;
   background: rgba(6, 22, 34, 0.82);
   border: 1px solid rgba(255, 204, 68, 0.55);
   border-radius: 12px;
   padding: 7px 12px;
   font-size: 13px; line-height: 1.5;
+  text-align: center;
   backdrop-filter: blur(4px);
   pointer-events: none;
 }
@@ -481,11 +488,13 @@ html, body {
       </div>
     </header>
 
-    <!-- 任務提示 -->
-    <div id="quest-banner" class="hidden"></div>
-
-    <!-- 常駐委託需求小卡（隨時看得到還缺哪些垃圾） -->
-    <div id="commission-hud" class="hidden"></div>
+    <!-- 頂部資訊堆疊：任務 + 委託 垂直排列，避免在直向手機上重疊 -->
+    <div id="top-info">
+      <!-- 任務提示 -->
+      <div id="quest-banner" class="hidden"></div>
+      <!-- 常駐委託需求小卡（隨時看得到還缺哪些垃圾） -->
+      <div id="commission-hud" class="hidden"></div>
+    </div>
 
     <!-- 浮動提示文字 (賺錢/事件) -->
     <div id="toast-layer"></div>
