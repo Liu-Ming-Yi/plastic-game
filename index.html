@@ -744,6 +744,7 @@ function freshState() {
 let paused = false;
 let questPollT = 0;   // 任務自動巡檢計時：讓被動達成（如健康度回升）的任務也能即時更新
 let combo = 0, comboTimer = 0;
+let animClock = 0;    // 連續累加的動畫時鐘（給海浪等視覺用，永不歸零）
 let fx = [];          // 特效粒子（水花、收線星光）
 let allCleanCelebrated = false;  // 是否已慶祝過全海域淨化
 let tutStep = -1;     // 目前教學步驟 (-1 = 未進行)
@@ -941,10 +942,13 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 80));
 //  海浪 / 海面
 // ============================================================
 function surfaceY(worldX, t) {
+  // 用連續累加的 animClock 當波形相位（不用會每天 %DAY_LEN 歸零的 state.time），
+  // 避免每隔一天海浪相位瞬間跳掉、整片海面「回溯」一下
+  const a = animClock;
   return seaY
-    + Math.sin(worldX * 0.0090 + t * 1.10) * 7
-    + Math.sin(worldX * 0.0260 + t * 1.70) * 4
-    + Math.sin(worldX * 0.0045 - t * 0.65) * 11;
+    + Math.sin(worldX * 0.0090 + a * 1.10) * 7
+    + Math.sin(worldX * 0.0260 + a * 1.70) * 4
+    + Math.sin(worldX * 0.0045 - a * 0.65) * 11;
 }
 function pollutionAt(worldX) {
   let p = 0;
@@ -1128,6 +1132,7 @@ function update(dt) {
   const prevTime = state.time;
   state.time = (state.time + dt) % DAY_LEN;
   if (state.time < prevTime) state.day++;   // 跨過午夜 → 新的一天
+  animClock += dt;                          // 視覺動畫用，連續不歸零（海浪相位不跳）
 
   // Combo 連釣計時
   if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 0; }
@@ -1672,8 +1677,8 @@ function drawCombo() {
   ctx.font='bold 22px sans-serif';
   const alpha = Math.min(1, comboTimer/1.5);
   ctx.fillStyle=`rgba(255,170,40,${alpha})`;
-  // 任務橫幅已移到最上方，這裡往上移到海面上方、與橫幅之間留出空間
-  const comboY = seaY * 0.7;
+  // 放在海面下方一點：避開上方「任務 + 委託」資訊堆疊（手機直向時堆疊較高，會擋到文字）
+  const comboY = seaY + 36;
   ctx.fillText(`🔥 連撈 ${combo} 連！`, view.w/2, comboY);
   // 計時條
   const bw=120, bx=view.w/2-bw/2, by=comboY+18;
@@ -1956,15 +1961,71 @@ function drawFishBody(ty, ph) {
   }
 }
 
+// 圓角矩形小工具（不依賴 ctx.roundRect，相容較舊的手機瀏覽器）
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+// 用向量畫海洋垃圾，取代 emoji：手機 canvas 對彩色 emoji 支援不一，
+// 常會用當下 fillStyle 畫成單色（前面畫海水/魚 → 變成藍色塊）。向量在所有裝置都一致。
+// 已在呼叫端 translate 到中心點，這裡以 (0,0) 為中心繪製。
+function drawTrashItem(key){
+  ctx.lineWidth=1; ctx.lineJoin='round';
+  switch(key){
+    case 'bottle': { // 寶特瓶（透明淡藍）
+      ctx.fillStyle='#bfe9f5'; rrect(-5,-6,10,16,4); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.stroke();
+      ctx.fillStyle='#e8f7fc'; rrect(-3.5,-4,2.5,11,1.2); ctx.fill(); // 高光
+      ctx.fillStyle='#5bb7d6'; rrect(-3,-11,6,5,1.5); ctx.fill();     // 瓶蓋
+      break; }
+    case 'bag': { // 塑膠袋（半透明白，兩個提把）
+      ctx.fillStyle='rgba(238,247,252,0.92)';
+      ctx.beginPath(); ctx.moveTo(-7,-1); ctx.lineTo(7,-1); ctx.lineTo(5,11); ctx.lineTo(-5,11); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(-3,-1,3,Math.PI,0,true); ctx.stroke();
+      ctx.beginPath(); ctx.arc(3,-1,3,Math.PI,0,true); ctx.stroke();
+      break; }
+    case 'jug': { // 清潔/乳液瓶（白底＋泵頭）
+      ctx.fillStyle='#eef3f6'; rrect(-5,-4,10,14,3); ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.fillStyle='#7f91a3'; rrect(-2,-10,4,6,1); ctx.fill();   // 泵頸
+      ctx.fillStyle='#7f91a3'; rrect(-6,-11,5,2,1); ctx.fill();   // 泵嘴
+      ctx.fillStyle='#cfe0ec'; rrect(-4,2,8,5,1); ctx.fill();     // 標籤
+      break; }
+    case 'can': { // 鋁罐（銀色圓柱＋紅環）
+      ctx.fillStyle='#cdd5da'; rrect(-5,-9,10,18,2); ctx.fill();
+      ctx.fillStyle='#eef2f4'; rrect(-5,-9,3,18,2); ctx.fill();   // 高光
+      ctx.fillStyle='#e3402f'; ctx.fillRect(-5,-2,10,4);          // 紅環
+      ctx.fillStyle='#9aa3a9'; ctx.beginPath(); ctx.ellipse(0,-9,5,1.6,0,0,7); ctx.fill();
+      break; }
+    case 'foam': { // 保麗龍（白色方塊＋顆粒）
+      ctx.fillStyle='#f3f3ee'; rrect(-8,-7,16,15,2); ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.fillStyle='rgba(0,0,0,0.06)';
+      for(const p of [[-4,-3],[2,-4],[-2,2],[4,1],[0,-1]]){ ctx.beginPath(); ctx.arc(p[0],p[1],1.3,0,7); ctx.fill(); }
+      break; }
+    case 'slipper': { // 夾腳拖（彩色鞋底＋人字帶）
+      ctx.fillStyle='#ff7aa0'; ctx.beginPath(); ctx.ellipse(0,2,6,10,0,0,7); ctx.fill();
+      ctx.fillStyle='#ffd0de'; ctx.beginPath(); ctx.ellipse(0,2,4.2,8,0,0,7); ctx.fill();
+      ctx.strokeStyle='#c94f74'; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(-3.5,4); ctx.moveTo(0,-5); ctx.lineTo(3.5,4); ctx.stroke();
+      break; }
+    default: { ctx.fillStyle='#cdd5da'; rrect(-6,-6,12,12,3); ctx.fill(); }
+  }
+}
 function drawTrash(c, t) {
-  ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for (const tr of state.trash) {
     const x=tr.worldX-c; if(x<-30||x>view.w+30) continue;
     const y=trashScreenY(tr,t);
     ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(tr.ph*0.5)*0.2);
-    ctx.fillText(tr.emoji,0,0); ctx.restore();
+    drawTrashItem(tr.key);
+    ctx.restore();
   }
-  ctx.textBaseline='alphabetic';
 }
 
 // 受困海龜（頭上紅色 ❗，提示可用釣竿碰觸救援）
@@ -2082,7 +2143,7 @@ function drawLine(c, t) {
   ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(bx+14, topY); ctx.lineTo(bx+14, tipY); ctx.stroke();
   // 鉤 / 鉤到的垃圾
-  if (L.caught){ ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText(L.caught.emoji, bx+14, tipY+4); }
+  if (L.caught){ ctx.save(); ctx.translate(bx+14, tipY+2); ctx.scale(0.85,0.85); drawTrashItem(L.caught.key); ctx.restore(); }
   else {
     ctx.fillStyle='#ddd'; ctx.beginPath(); ctx.arc(bx+14, tipY, 3, 0, 7); ctx.fill();
     // 附近有垃圾或海龜 → 顯示提示
