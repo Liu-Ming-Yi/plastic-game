@@ -72,14 +72,16 @@ html, body {
 .stat .icon { font-size: 16px; }
 .stat .val { letter-spacing: 0.3px; }
 #stat-coins .val { color: var(--gold); }
-.stat.eco { flex: 1; min-width: 0; max-width: 220px; }
+.stat.eco { flex: 1; min-width: 64px; max-width: 220px; overflow: hidden; }
 .eco-label { font-size: 12px; opacity: 0.85; white-space: nowrap; }
 @media (max-width: 400px) { .eco-label { display: none; } }
-/* 窄螢幕（小尺寸手機）：縮小頂部資訊列留白、收起時鐘，避免擠壓健康度條或溢出畫面 */
+/* 手機（直向）一排塞不下時鐘，會把健康度框擠爆、愛心與% 戳出框外。
+   ≤480px（涵蓋所有手機）一律收起時鐘，把空間留給健康度條。 */
+@media (max-width: 480px) { #stat-clock { display: none; } }
+/* 小尺寸手機再進一步縮小頂部資訊列留白 */
 @media (max-width: 380px) {
   .stat { padding: 5px 8px; font-size: 13px; gap: 4px; }
   .stat .icon { font-size: 14px; }
-  #stat-clock { display: none; }
 }
 .eco-bar {
   flex: 1; height: 8px; border-radius: 999px;
