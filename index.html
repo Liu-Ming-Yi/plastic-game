@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>淨海漁夫 · Ocean Cleanup Fisher</title>
+  <title>淨海稽查員 · Ocean Cleanup Inspector</title>
   <style>
 /* ============================================================
    淨海漁夫 — 樣式表 (RWD：手機優先，電腦自動適應)
@@ -75,6 +75,12 @@ html, body {
 .stat.eco { flex: 1; min-width: 0; max-width: 220px; }
 .eco-label { font-size: 12px; opacity: 0.85; white-space: nowrap; }
 @media (max-width: 400px) { .eco-label { display: none; } }
+/* 窄螢幕（小尺寸手機）：縮小頂部資訊列留白、收起時鐘，避免擠壓健康度條或溢出畫面 */
+@media (max-width: 380px) {
+  .stat { padding: 5px 8px; font-size: 13px; gap: 4px; }
+  .stat .icon { font-size: 14px; }
+  #stat-clock { display: none; }
+}
 .eco-bar {
   flex: 1; height: 8px; border-radius: 999px;
   background: rgba(255,255,255,0.15); overflow: hidden;
@@ -106,7 +112,7 @@ html, body {
 
 /* ---------- 任務橫幅 ---------- */
 #quest-banner {
-  position: absolute; top: calc(8px + var(--safe-top)); left: 50%;
+  position: absolute; top: calc(58px + var(--safe-top)); left: 50%;
   transform: translateX(-50%);
   background: rgba(6, 22, 34, 0.85);
   border: 1px solid var(--accent);
@@ -136,7 +142,7 @@ html, body {
   font-weight: 800; font-size: 18px;
   text-shadow: 0 2px 6px rgba(0,0,0,0.6);
   animation: floatUp 1.1s ease-out forwards;
-  white-space: nowrap;
+  max-width: 88vw; white-space: normal; text-align: center;
 }
 .toast.coin { color: var(--gold); }
 .toast.eco { color: var(--accent); }
@@ -194,11 +200,11 @@ html, body {
 .center-cluster > .row { display: flex; gap: 8px; }
 
 /* 把兩個小按鈕並排 */
-#btnScoop, #btnFilter { min-width: 110px; }
+#btnScoop, #btnFilter { min-width: 100px; }
 
 /* ---------- 靠岸提示 ---------- */
 #dockHint {
-  position: absolute; bottom: calc(110px + var(--safe-bottom)); left: 50%;
+  position: absolute; bottom: calc(150px + var(--safe-bottom)); left: 50%;
   transform: translateX(-50%);
   background: var(--gold); color: #3a2700;
   border: none; border-radius: 999px;
@@ -367,6 +373,69 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* ---------- 常駐委託需求小卡 ---------- */
+#commission-hud {
+  position: absolute; left: 12px; top: calc(104px + var(--safe-top));
+  z-index: 11; max-width: min(72vw, 360px);
+  background: rgba(6, 22, 34, 0.82);
+  border: 1px solid rgba(255, 204, 68, 0.55);
+  border-radius: 12px;
+  padding: 7px 12px;
+  font-size: 13px; line-height: 1.5;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+#commission-hud b { color: var(--gold); }
+
+/* ---------- 開場故事畫面 ---------- */
+.story-panel { text-align: center; padding: 22px 20px; }
+.story-box {
+  position: relative;
+  background: linear-gradient(180deg, rgba(8,30,46,0.9), rgba(6,20,32,0.9));
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 22px 18px;
+  min-height: 190px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 30px rgba(25,195,166,0.12);
+}
+.story-ico { font-size: 52px; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
+.story-text { font-size: 16px; line-height: 1.85; opacity: 0.96; }
+.story-text b { color: var(--gold); }
+.story-nav { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 0 6px; }
+.story-arrow {
+  width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+  color: #eaf6ff; font-size: 20px; cursor: pointer; font-family: inherit;
+}
+.story-arrow:active { transform: scale(0.9); }
+.story-arrow:disabled { opacity: 0.25; cursor: default; }
+.story-dots { display: flex; gap: 7px; }
+.story-dots .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.2s; }
+.story-dots .dot.on { background: var(--accent); }
+
+/* ---------- 拯救海龜小遊戲 ---------- */
+.turtle-panel { max-width: 400px; }
+.turtle-art { font-size: 84px; margin: 6px 0 4px; animation: turtleWobble 0.6s ease-in-out infinite; }
+@keyframes turtleWobble { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.turtle-msg { font-size: 15px; line-height: 1.6; margin: 8px 0 14px; }
+.turtle-msg b { color: var(--gold); }
+.turtle-bar { height: 18px; border-radius: 999px; background: rgba(255,255,255,0.14); overflow: hidden; margin-bottom: 8px; }
+.turtle-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #2fe0c0, #7ef0a0); transition: width 0.08s linear; }
+.turtle-time { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; margin-bottom: 16px; }
+.turtle-time-fill { height: 100%; width: 100%; background: var(--danger); }
+.turtle-tap { font-size: 22px; }
+.turtle-tap:active { transform: scale(0.95); filter: brightness(0.92); }
+
+/* ---------- 委託 / 賣垃圾列 ---------- */
+.need-list { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 4px 10px; }
+.need-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 2px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.need-row:last-child { border-bottom: none; }
+.need-row .buy-btn { padding: 7px 10px; font-size: 13px; }
+
 /* ---------- 電腦版：放大畫面、控制鈕移到角落 ---------- */
 @media (min-width: 820px) and (pointer: fine) {
   .ctrl.move { width: 58px; height: 58px; }
@@ -395,9 +464,9 @@ html, body {
         <span class="icon">🪙</span><span class="val" id="coins">0</span>
       </div>
       <div class="stat" id="stat-hold">
-        <span class="icon">🐟</span><span class="val"><span id="hold">0</span>/<span id="holdMax">10</span></span>
+        <span class="icon">🎒</span><span class="val"><span id="hold">0</span>/<span id="holdMax">10</span></span>
       </div>
-      <div class="stat eco" id="stat-eco" title="海洋健康度：越乾淨，魚越多、賣價越高">
+      <div class="stat eco" id="stat-eco" title="海洋健康度：越乾淨，魚群越多，代表海域恢復得越好">
         <span class="icon" id="ecoIcon">💚</span>
         <span class="eco-label">海洋</span>
         <div class="eco-bar"><div class="eco-fill" id="ecoFill"></div></div>
@@ -415,6 +484,9 @@ html, body {
     <!-- 任務提示 -->
     <div id="quest-banner" class="hidden"></div>
 
+    <!-- 常駐委託需求小卡（隨時看得到還缺哪些垃圾） -->
+    <div id="commission-hud" class="hidden"></div>
+
     <!-- 浮動提示文字 (賺錢/事件) -->
     <div id="toast-layer"></div>
 
@@ -422,7 +494,7 @@ html, body {
     <footer id="hud-bottom">
       <button class="ctrl move" id="btnLeft" aria-label="向左">◀</button>
       <div class="center-cluster">
-        <button class="ctrl action" id="btnCast">🎣 釣魚</button>
+        <button class="ctrl action" id="btnCast">🎣 釣垃圾</button>
         <button class="ctrl action small" id="btnScoop" disabled>🗑️ 撈垃圾</button>
         <button class="ctrl action small" id="btnFilter" disabled>💧 淨化</button>
       </div>
@@ -430,22 +502,33 @@ html, body {
     </footer>
 
     <!-- 靠岸時的商店按鈕 -->
-    <button id="dockHint" class="hidden">💰 靠岸了！點此賣魚 / 逛商店</button>
+    <button id="dockHint" class="hidden">🏪 靠岸了！點此進入</button>
 
-    <!-- 商店 / 升級面板 -->
+    <!-- 商店 / 升級面板（標題與內容依靠岸的建築動態切換） -->
     <div id="shop-overlay" class="overlay hidden">
       <div class="panel shop">
         <div class="panel-head">
-          <h2>🏪 漁港商店</h2>
+          <h2 id="shopTitle">🏪 商店</h2>
           <div class="panel-coins">🪙 <span id="shopCoins">0</span></div>
           <button class="close" id="shopClose">✕</button>
         </div>
-        <div class="tabs">
-          <button class="tab active" data-tab="upgrade">⬆️ 升級</button>
-          <button class="tab" data-tab="machine">⚙️ 環保機器</button>
-          <button class="tab" data-tab="info">📖 圖鑑</button>
-        </div>
         <div class="tab-body" id="shopBody"></div>
+      </div>
+    </div>
+
+    <!-- 拯救海龜小遊戲 -->
+    <div id="turtle-overlay" class="overlay hidden">
+      <div class="panel turtle-panel">
+        <div class="panel-head">
+          <h2 id="turtleTitle">🐢 受困海龜！</h2>
+        </div>
+        <div class="tab-body" style="text-align:center;">
+          <div id="turtleArt" class="turtle-art">🐢</div>
+          <p class="turtle-msg" id="turtleMsg">海龜被<b>塑膠袋</b>纏住了！<br/><b>快速連點下方按鈕</b>幫牠掙脫！</p>
+          <div class="turtle-bar"><div class="turtle-fill" id="turtleFill"></div></div>
+          <div class="turtle-time"><div class="turtle-time-fill" id="turtleTime"></div></div>
+          <button id="turtleTap" class="big-btn turtle-tap">👆 用力拉！</button>
+        </div>
       </div>
     </div>
 
@@ -486,21 +569,19 @@ html, body {
       </div>
     </div>
 
-    <!-- 開始畫面 -->
+    <!-- 開場故事畫面（方框 + ◀▶ 翻頁） -->
     <div id="start-overlay" class="overlay">
-      <div class="panel start">
-        <h1>🌊 淨海漁夫</h1>
-        <p class="subtitle">Ocean Cleanup Fisher</p>
-        <p class="desc">
-          開著小船在海上釣魚賺錢，升級你的裝備。<br/>
-          但海洋充滿垃圾與塑膠微粒——<br/>
-          用環保機器淨化海洋，魚群才會回來！
-        </p>
-        <div class="start-controls">
-          <p>🖥️ 電腦：<b>A/D 或 ← →</b> 移動、<b>空白鍵或點海面</b> 釣魚</p>
-          <p>📱 手機：<b>左右鍵</b>移動、<b>點海面</b>釣魚</p>
+      <div class="panel start story-panel">
+        <div class="story-box">
+          <div class="story-ico" id="storyIco">📋</div>
+          <p class="story-text" id="storyText"></p>
         </div>
-        <button id="btnStart" class="big-btn">▶ 開始遊戲</button>
+        <div class="story-nav">
+          <button id="storyPrev" class="story-arrow" aria-label="上一頁">◀</button>
+          <div class="story-dots" id="storyDots"></div>
+          <button id="storyNext" class="story-arrow" aria-label="下一頁">▶</button>
+        </div>
+        <button id="btnStart" class="big-btn hidden">⚓ 上任，開始任務</button>
         <button id="btnReset" class="text-btn">清除存檔重新開始</button>
       </div>
     </div>
@@ -508,17 +589,29 @@ html, body {
 
   <script>
 /* ============================================================
-   淨海漁夫 Ocean Cleanup Fisher
+   淨海稽查員 Ocean Cleanup Inspector
    純 JavaScript + Canvas 2D。世界座標水平捲動，攝影機跟著船。
+   你是被下放東部海岸的環保署稽查員，要釣起海洋垃圾、接文創委託、
+   買淨化設備清除塑膠微粒、拯救受困海龜，讓海洋與漁民生計恢復。
    ============================================================ */
 (() => {
 'use strict';
 
 // ---------- 基本設定 ----------
 const WORLD_W = 3000;          // 海洋世界總寬度
-const DOCK_X  = WORLD_W - 320; // 漁港 / 商店所在位置（留邊距，避免靠岸時被擠到螢幕邊緣）
+const HARBOR_X = WORLD_W - 360; // 海岸線（三棟建築所在帶狀區）起點
 const DAY_LEN = 150;           // 一天 = 150 秒
-const SAVE_KEY = 'oceanFisher.save.v1';
+const SAVE_KEY = 'oceanInspector.save.v1';
+
+// ---------- 海岸三棟建築 ----------
+// 玩家把船開到建築附近即可進入；各建築功能不同
+const SHOPS = {
+  recycler: { name:'回收商',       icon:'🛠️', x: WORLD_W - 470 }, // 升級船 / 釣竿 / 背包 / 雷達
+  micropc:  { name:'點點塑',       icon:'🏭', x: WORLD_W - 300 }, // 購買淨化機 / 撈取機
+  artshop:  { name:'海廢文創小舖', icon:'🎨', x: WORLD_W - 130 }, // 接委託 + 賤價賣多餘垃圾
+};
+const DOCK_X = SHOPS.artshop.x;   // 船可航行到的最右界（最右邊那棟）
+const SHOP_R = 95;                // 靠岸判定半徑
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -529,21 +622,21 @@ let running = false;
 let lastT = 0;
 let time = 6 * 60 * 60 / (24*60*60) * DAY_LEN; // 從早上6點開始(秒)
 
-// ---------- 升級定義 ----------
+// ---------- 升級定義（在「回收商」購買）----------
 const DEFS = {
   rod:    { name:'釣竿',           icon:'🎣', cat:'upgrade', lvl:1, min:1, max:6, base:30,  mul:1.7 },
   speed:  { name:'船用引擎',       icon:'⚙️', cat:'upgrade', lvl:1, min:1, max:6, base:25,  mul:1.6 },
-  hold:   { name:'魚艙',           icon:'🧺', cat:'upgrade', lvl:1, min:1, max:6, base:35,  mul:1.7 },
-  sonar:  { name:'聲納雷達',       icon:'📡', cat:'upgrade', lvl:0, min:0, max:3, base:120, mul:2.0 },
+  hold:   { name:'背包',           icon:'🎒', cat:'upgrade', lvl:1, min:1, max:6, base:35,  mul:1.7 },
+  sonar:  { name:'垃圾雷達',       icon:'📡', cat:'upgrade', lvl:0, min:0, max:3, base:120, mul:2.0 },
 };
 const depthFor  = l => 130 + (l - 1) * 70;     // 釣線可達深度(螢幕px)
-const holdFor   = l => 8 + (l - 1) * 6;        // 魚艙容量
+const holdFor   = l => 8 + (l - 1) * 6;        // 背包容量（可裝幾件垃圾）
 const speedMul  = l => 1 + (l - 1) * 0.45;     // 船速倍率（每級 +45%，升級更有感）
 const descOf = {
-  rod:   l => `釣線深度等級 ${l}，能釣到更深、更值錢的魚`,
+  rod:   l => `釣線深度等級 ${l}，能撈到更深處的垃圾`,
   speed: l => `船速 +${Math.round((speedMul(l)-1)*100)}%`,
-  hold:  l => `魚艙可裝 ${holdFor(l)} 條魚`,
-  sonar: l => l>0 ? `魚價 +${l*8}%，並顯示魚群與污染資訊` : '安裝後顯示魚群位置與污染程度，並提升魚價',
+  hold:  l => `背包可裝 ${holdFor(l)} 件垃圾`,
+  sonar: l => l>0 ? `賣垃圾/委託金 +${l*8}%，並顯示海面垃圾與海龜位置` : '安裝後顯示垃圾與海龜位置，並提升收入',
 };
 
 // ---------- 環保機器（購買後放置定點、自動運作；可收回重放） ----------
@@ -564,7 +657,7 @@ const POLLUTION_CREEP  = 0.0005; // 濃度/秒 — 極微幅回升（淨化機�
 // 「已淨化」門檻：濃度低於此值就視為完全乾淨（畫面也不再畫污染），讓「看起來乾淨」＝「任務算乾淨」
 const CLEAN_P = 0.04;
 
-// ---------- 魚種 ----------
+// ---------- 魚種（純裝飾：海洋越乾淨魚越多，不能釣，只作健康指標）----------
 const FISH_TYPES = [
   { key:'sardine', name:'沙丁魚', emoji:'🐟', color:'#9fd3e8', value:8,   dMinF:0.05, dMaxF:0.30, w:5,  night:0, shape:'fish',   size:0.8 },
   { key:'bream',   name:'真鯛',   emoji:'🐠', color:'#ff9a6c', value:22,  dMinF:0.25, dMaxF:0.58, w:4,  night:0, shape:'bream',  size:1.0 },
@@ -573,9 +666,34 @@ const FISH_TYPES = [
   { key:'squid',   name:'魷魚',   emoji:'🦑', color:'#e7a6c4', value:70,  dMinF:0.40, dMaxF:0.82, w:2,  night:1, shape:'squid',  size:1.0 },
   { key:'shrimp',  name:'甜蝦',   emoji:'🦐', color:'#ff8e7a', value:30,  dMinF:0.80, dMaxF:0.93, w:3,  night:0, shape:'shrimp', size:0.85 },
 ];
-const TRASH_EMOJI = ['🥤','🛍️','🧴','🥫','📦','🩴'];
-// 海底可捕獲的螃蟹（需要長釣竿才搆得到）
-const CRAB_TYPE = { key:'crab', name:'螃蟹', emoji:'🦀', color:'#e74c3c', value:45 };
+
+// ---------- 海洋垃圾型別（用釣竿撈起，可做委託材料或賤價賣掉）----------
+const TRASH_TYPES = [
+  { key:'bottle',  name:'寶特瓶', emoji:'🥤', sell:2, w:5 },
+  { key:'bag',     name:'塑膠袋', emoji:'🛍️', sell:1, w:5 },
+  { key:'jug',     name:'塑膠瓶', emoji:'🧴', sell:2, w:4 },
+  { key:'can',     name:'鋁罐',   emoji:'🥫', sell:2, w:4 },
+  { key:'foam',    name:'保麗龍', emoji:'📦', sell:1, w:3 },
+  { key:'slipper', name:'廢拖鞋', emoji:'🩴', sell:3, w:2 },
+];
+const TRASH_BY_KEY = Object.fromEntries(TRASH_TYPES.map(t => [t.key, t]));
+function pickTrashType(){
+  const total = TRASH_TYPES.reduce((a,t)=>a+t.w,0);
+  let r = Math.random()*total;
+  for (const t of TRASH_TYPES){ if ((r -= t.w) <= 0) return t; }
+  return TRASH_TYPES[0];
+}
+
+// ---------- 海廢文創委託（在「海廢文創小舖」接單）----------
+// need：需要的垃圾型別與數量；reward：完成獎金
+const COMMISSIONS = [
+  { title:'寶特瓶小盆栽', emoji:'🪴', need:{ bottle:3 },            reward:55  },
+  { title:'塑膠袋編織提袋', emoji:'👜', need:{ bag:4 },              reward:70  },
+  { title:'鋁罐療癒風鈴',  emoji:'🎐', need:{ can:3, bottle:1 },     reward:85  },
+  { title:'海廢拼貼畫',    emoji:'🖼️', need:{ foam:2, bag:2, slipper:1 }, reward:115 },
+  { title:'回收瓶鑰匙圈',  emoji:'🔑', need:{ jug:3, can:1 },        reward:95  },
+  { title:'廢拖鞋小玩偶',  emoji:'🧸', need:{ slipper:2, bag:1 },    reward:90  },
+];
 
 // ---------- 遊戲狀態 ----------
 let state;
@@ -587,18 +705,21 @@ function freshState() {
     spares: { scoop:[], filter:[] }, // 收回的半舊機器（保留剩餘耐久，避免放回即回滿）
     placed: [],                   // 已放置在海上的機器 {type, worldX, cd, life}
     boat: { x: 400, vx: 0, dir: 1 },
-    hold: [],                 // 魚艙內的魚 {type,value}
+    hold: [],                 // 背包內的垃圾 {key, emoji, name}
     fish: [],
     trash: [],
-    zones: [                  // 污染海域 (世界座標) — 4 區
-      { x0: 560,  x1: 880,  p: 0.85 },
-      { x0: 1150, x1: 1450, p: 0.95 },
-      { x0: 1700, x1: 2000, p: 1.0  },
-      { x0: 2250, x1: 2550, p: 0.90 },
+    turtle: null,             // 受困海龜事件 {worldX, depth, vx, ph, hideT}
+    zones: [                  // 污染海域 (世界座標) — 4 區，集中在港口左側
+      { x0: 460,  x1: 760,  p: 0.85 },
+      { x0: 1020, x1: 1320, p: 0.95 },
+      { x0: 1560, x1: 1860, p: 1.0  },
+      { x0: 2060, x1: 2340, p: 0.90 },
     ],
     eco: 55,                  // 海洋健康度 0~100 (平滑值)
     line: { active:false, phase:'idle', depth:0, caught:null },
-    stats: { caught:0, sold:0, trash:0, cleaned:0, earned:0, polluted:0 },
+    commissionIdx: 0,         // 目前文創委託編號（循環）
+    commissionProgress: {},   // 目前委託「已先繳交」的材料數 {key:已交數}
+    stats: { caught:0, delivered:0, commissions:0, trash:0, cleaned:0, earned:0, rescued:0 },
     questIdx: 0,
     time: time,
     day: 1,
@@ -616,37 +737,39 @@ let allCleanCelebrated = false;  // 是否已慶祝過全海域淨化
 let tutStep = -1;     // 目前教學步驟 (-1 = 未進行)
 let tutBase = 0;      // 自動推進步驟的基準值
 let rotateDismissed = false;  // 是否已關閉橫向提示
+let turtleSpawnT = 25; // 距離下一隻受困海龜出現的倒數（秒）
+let rescue = null;    // 拯救海龜小遊戲狀態 {taps, need, time, max}
+let storyPage = 0;    // 開場故事目前頁碼
 
 // ---------- 任務 ----------
 const allZonesClean = s => s.zones.every(z => z.p <= CLEAN_P);
 const cleanedZones  = s => s.zones.filter(z => z.p <= CLEAN_P).length;
 // 每個任務都有 prog:s=>[目前, 目標]，用來畫進度條
 const QUESTS = [
-  { text:'釣到 3 條魚',                 done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
-  { text:'把船開到右邊的漁港把魚賣掉',  done:s=>s.stats.sold>=1,    prog:s=>[s.stats.sold,1],     reward:30 },
-  { text:'購買「撈取機」並放到海上撈垃圾',  done:s=>machineOwned('scoop')>0, prog:s=>[machineOwned('scoop'),1], reward:60 },
-  { text:'撈起 5 件海洋垃圾',           done:s=>s.stats.trash>=5,   prog:s=>[s.stats.trash,5],    reward:60 },
-  { text:'累積總收入達到 300 元',       done:s=>s.stats.earned>=300, prog:s=>[Math.floor(s.stats.earned),300], reward:80 },
-  { text:'把釣竿升級到 Lv 3，釣更深的魚', done:s=>s.up.rod>=3,       prog:s=>[s.up.rod,3],         reward:80 },
-  { text:'到污染區釣到 3 條「污染魚」（賣不了好價錢，所以要淨化海洋）', done:s=>s.stats.polluted>=3 || allZonesClean(s), prog:s=>[s.stats.polluted,3], reward:80 },
-  { text:'購買「淨化機」放進深色污染區',    done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
-  { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:150 },
-  { text:'撈起累計 25 件海洋垃圾',      done:s=>s.stats.trash>=25,  prog:s=>[s.stats.trash,25],   reward:120 },
+  { text:'點海面，用釣竿釣起 3 件海洋垃圾',  done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
+  { text:'到右邊「🎨海廢文創小舖」完成第 1 筆委託', done:s=>s.stats.commissions>=1, prog:s=>[s.stats.commissions,1], reward:50 },
+  { text:'到「🛠️回收商」把背包或釣竿升級一次',  done:s=>s.up.rod>=2||s.up.hold>=2, prog:s=>[(s.up.rod>=2||s.up.hold>=2)?1:0,1], reward:50 },
+  { text:'到「🏭點點塑」購買「淨化機」放進污染區', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
+  { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:120 },
+  { text:'拯救 1 隻被塑膠袋纏住的海龜或水母', done:s=>s.stats.rescued>=1, prog:s=>[s.stats.rescued,1], reward:80 },
+  { text:'累計完成 3 筆文創委託',       done:s=>s.stats.commissions>=3, prog:s=>[s.stats.commissions,3], reward:120 },
+  { text:'累積總收入達到 400 元',       done:s=>s.stats.earned>=400, prog:s=>[Math.floor(s.stats.earned),400], reward:120 },
   { text:'淨化 2 個污染海域',           done:s=>s.stats.cleaned>=2 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),2], reward:200 },
-  { text:'讓海洋健康度回升到 65%',      done:s=>s.eco>=65,          prog:s=>[Math.round(s.eco),65], reward:150 },
-  { text:'最終目標：淨化全部 4 個污染海域！', done:s=>allZonesClean(s), prog:s=>[cleanedZones(s),s.zones.length], reward:300 },
+  { text:'讓海洋健康度回升到 70%',      done:s=>s.eco>=70,          prog:s=>[Math.round(s.eco),70], reward:150 },
+  { text:'最終目標：淨化全部 4 個污染海域，立功調回台北！', done:s=>allZonesClean(s), prog:s=>[cleanedZones(s),s.zones.length], reward:300 },
 ];
 
 // ---------- 引導教學步驟 ----------
 const TUT = [
-  { text:'歡迎來到《淨海漁夫》！🎣 你是一位漁夫，要靠賣魚賺錢，並把被污染的海洋清乾淨。', manual:true },
+  { text:'歡迎來到《淨海稽查員》！你是被下放到東部海岸的<b>環保署稽查員</b>，任務是清乾淨海洋、幫漁民找回生計，立功調回台北！', manual:true },
   { text:'先學移動：按住左下 ◀ 或右下 ▶ 開船（電腦可用 A／D 或方向鍵）。試著移動看看！', enter:s=>tutBase=s.boat.x, auto:s=>Math.abs(s.boat.x - tutBase) > 80 },
-  { text:'釣魚：直接<b>點海面</b>任意處（電腦可按空白鍵）放下釣竿。釣到一條魚試試！', enter:s=>tutBase=s.stats.caught, auto:s=>s.stats.caught > tutBase },
-  { text:'賣魚換錢：要把<b>船</b>開到<b>最右邊的漁港</b>才賣得掉。一直往右開，靠岸後點下方金色的<b>「💰 賣魚 / 逛商店」</b>按鈕，就會賣魚並開啟商店！', enter:s=>tutBase=s.stats.sold, auto:s=>s.stats.sold > tutBase },
-  { text:'淨化海洋：<b>深色海域</b>是塑膠微粒污染區。魚也會游進去，但在那釣到的是<b>污染魚</b>，賣出只值 5～10 元！到商店「環保機器」分頁買<b>淨化機</b>，開回污染區，用下方 💧 鍵放下，它會自動淨化。', manual:true },
-  { text:'⚠️ 注意：機器有<b>耐久度</b>，用約 30 秒就會<b>損壞消失</b>，要再買新的；而沒處理的污染區會<b>慢慢擴大</b>，動作要快！', manual:true },
-  { text:'撈垃圾機(🗑️)同理：放在海面會自動撈起漂浮垃圾換錢。機器可放多台，靠近自己的機器再按一次可收回（耐久會保留）換位置。', manual:true },
-  { text:'🌊 最終目標：淨化全部 4 個污染海域！兼顧賺錢與環保，祝你好運～', manual:true, last:true },
+  { text:'釣垃圾：直接<b>點海面</b>任意處（電腦可按空白鍵）放下釣竿，把<b>海洋垃圾</b>撈起來收進背包。試著釣一件！', enter:s=>tutBase=s.stats.caught, auto:s=>s.stats.caught > tutBase },
+  { text:'換錢：把船開到<b>最右邊海岸</b>的三棟建築。靠近<b>🎨海廢文創小舖</b>，點金色按鈕進入，<b>完成委託</b>賺大錢；抓錯的垃圾也能在這裡<b>賤價賣掉</b>清背包。', manual:true },
+  { text:'升級裝備：靠近<b>🛠️回收商</b>可升級<b>釣竿、引擎、背包、雷達</b>，讓你撈得更快更多。', manual:true },
+  { text:'淨化海洋：<b>深色海域</b>是塑膠微粒污染區，魚不敢靠近。靠近<b>🏭點點塑</b>買<b>淨化機</b>，開回污染區用下方 💧 鍵放下，它會自動淨化。', manual:true },
+  { text:'⚠️ 機器有<b>耐久度</b>，用約 30 秒會<b>損壞消失</b>要再買；沒處理的污染區會<b>慢慢擴大</b>，動作要快！撈取機 🗑️ 放海面會自動撈垃圾換錢。', manual:true },
+  { text:'🐢🪼 突發事件：海面偶爾出現頭上有 <b>❗</b> 的<b>受困海龜或水母</b>（被塑膠袋纏住），用釣竿碰到牠就能進入<b>救援畫面</b>，快速連點幫牠掙脫，成功有獎金！', manual:true },
+  { text:'🌊 最終目標：淨化全部 4 個污染海域，讓魚群回來、漁民有生計，立功調回台北！祝你好運～', manual:true, last:true },
 ];
 function startTutorial(){ tutStep = 0; tutEnter(); }
 function tutEnter(){
@@ -678,13 +801,8 @@ function tutCheck(){   // 每幀檢查自動推進步驟
 function checkOrientation(){
   const el = document.getElementById('rotate-hint');
   if (!el) return;
-  let show = false;
-  try {
-    show = window.matchMedia('(orientation: portrait)').matches
-        && window.matchMedia('(pointer: coarse)').matches
-        && !rotateDismissed;
-  } catch (_) {}
-  el.classList.toggle('hidden', !show);
+  // 定位為「直向手機優先」：不再強制建議轉橫向，直向也完整可玩
+  el.classList.add('hidden');
 }
 
 // ============================================================
@@ -696,6 +814,7 @@ function save() {
       coins: state.coins, up: state.up, eco: state.eco,
       inv: state.inv, spares: state.spares, placed: state.placed,
       zones: state.zones, stats: state.stats, questIdx: state.questIdx,
+      commissionIdx: state.commissionIdx, commissionProgress: state.commissionProgress,
       boatX: state.boat.x, time: state.time, day: state.day, muted: state.muted, tutDone: state.tutDone,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -733,6 +852,8 @@ function load() {
     // 防呆：舊存檔的污染區座標若超出目前世界範圍，重建一份
     if (state.zones.some(z => z.x1 > DOCK_X - 200)) state.zones = freshState().zones;
     if (d.stats) state.stats = Object.assign(state.stats, d.stats);
+    state.commissionIdx = d.commissionIdx ?? 0;
+    state.commissionProgress = (d.commissionProgress && typeof d.commissionProgress==='object') ? d.commissionProgress : {};
     state.questIdx = d.questIdx ?? 0;
     state.boat.x = d.boatX ?? 400;
     state.time = d.time ?? time;
@@ -821,6 +942,9 @@ function rodReach(l)  { return columnH() * Math.min(0.98, 0.30 + (l - 1) * 0.135
 function fishScreenY(f, t) {
   return Math.min(surfaceY(f.worldX, t) + f.depth + Math.sin(f.ph) * 3, waterBottom());
 }
+function trashScreenY(tr, t) {
+  return Math.min(surfaceY(tr.worldX, t) + (tr.depth || 6) + Math.sin(tr.ph) * 3, waterBottom());
+}
 
 // ============================================================
 //  特效粒子
@@ -866,9 +990,12 @@ function spawnFish(forceX) {
   const pool = FISH_TYPES.filter(f => f.night === 0 || night);
   let total = pool.reduce((a,f)=>a+f.w,0), r = Math.random()*total, t = pool[0];
   for (const f of pool) { if ((r -= f.w) <= 0) { t = f; break; } }
-  // 魚可生成在任何海域（含污染區）；在污染區釣到的會變成「污染魚」
+  // 魚是「海洋乾不乾淨」的指標：避免生在污染區（找乾淨的水域）
   let x = forceX;
-  if (x == null) x = 200 + Math.random()*(DOCK_X-500);
+  if (x == null) {
+    x = 200 + Math.random()*(SHOPS.recycler.x-400);
+    for (let tries=0; tries<6 && pollutionAt(x)>0.3; tries++) x = 200 + Math.random()*(SHOPS.recycler.x-400);
+  }
   const depth = (t.dMinF + Math.random()*(t.dMaxF - t.dMinF)) * columnH();
   state.fish.push({
     t, worldX:x, depth,
@@ -877,9 +1004,11 @@ function spawnFish(forceX) {
   });
 }
 function spawnTrash(forceX) {
-  let x = forceX ?? (200 + Math.random()*(DOCK_X-400));
+  let x = forceX ?? (200 + Math.random()*(SHOPS.recycler.x-450));
+  const ty = pickTrashType();
   state.trash.push({
-    worldX:x, emoji:TRASH_EMOJI[(Math.random()*TRASH_EMOJI.length)|0],
+    worldX:x, key:ty.key, emoji:ty.emoji, name:ty.name,
+    depth: 6 + Math.pow(Math.random(),1.5)*(columnH()*0.8),   // 垃圾分布在不同深度（越深越需要好釣竿）
     ph: Math.random()*Math.PI*2, drift:(Math.random()-0.5)*8,
   });
 }
@@ -888,6 +1017,11 @@ function spawnTrash(forceX) {
 //  輸入
 // ============================================================
 const keys = { left:false, right:false };
+// 清空方向鍵狀態，並讓船立刻停下（避免「放開」事件遺失造成船自己一直開）
+function clearKeys() {
+  keys.left = false; keys.right = false;
+  if (state && state.boat) state.boat.vx = 0;
+}
 window.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.code==='ArrowLeft'||e.code==='KeyA') keys.left=true;
@@ -898,6 +1032,9 @@ window.addEventListener('keyup', e => {
   if (e.code==='ArrowLeft'||e.code==='KeyA') keys.left=false;
   if (e.code==='ArrowRight'||e.code==='KeyD') keys.right=false;
 });
+// 視窗失焦 / 觸控被中斷時，清掉按鍵狀態（修正放開事件遺失造成「船自己一直開」）
+window.addEventListener('blur', clearKeys);
+window.addEventListener('pointercancel', clearKeys);
 
 function holdBtn(id, on, off) {
   const el = document.getElementById(id);
@@ -913,6 +1050,9 @@ holdBtn('btnRight',()=>keys.right=true,()=>keys.right=false);
 document.getElementById('btnCast').addEventListener('click', cast);
 document.getElementById('btnScoop').addEventListener('click', ()=>toggleMachine('scoop'));
 document.getElementById('btnFilter').addEventListener('click', ()=>toggleMachine('filter'));
+
+// 拯救海龜：點面板任意處都算一次「拉扯」
+document.getElementById('turtle-overlay').addEventListener('pointerdown', e=>{ e.preventDefault(); rescueTap(); });
 
 // 放置 / 收回機器
 function toggleMachine(type) {
@@ -950,11 +1090,12 @@ canvas.addEventListener('pointerdown', e => {
 //  釣魚
 // ============================================================
 function cast() {
-  if (!running || shopOpen()) return;
+  if (!running || shopOpen() || rescue) return;
   if (state.line.active) return;
-  if (nearDock()) { openShop(); return; }
+  const shop = nearShop();
+  if (shop) { openShop(shop); return; }
   if (state.hold.length >= holdFor(state.up.hold)) {
-    toast(view.w/2, view.h*0.55, '魚艙滿了！去漁港賣魚 ▶', 'warn'); sfx('error'); return;
+    toast(view.w/2, view.h*0.55, '背包滿了！去海岸把垃圾交委託或賣掉 ▶', 'warn'); sfx('error'); return;
   }
   state.line = { active:true, phase:'down', depth:0, caught:null };
   sfx('cast');
@@ -998,33 +1139,46 @@ function update(dt) {
   // 釣線
   updateLine(dt);
 
-  // 魚群
-  const target = Math.round(26 * (0.4 + state.eco/100 * 1.1));
+  // 魚群數量＝海洋健康度的指標：一開始（髒）非常稀少，越乾淨魚越多
+  const eFrac = Math.max(0, Math.min(1, state.eco/100));
+  const target = Math.round(1 + Math.pow(eFrac, 2.5) * 48);  // eco 40%→約6、70%→約21、100%→49（越乾淨魚越多）
   while (state.fish.length < target) spawnFish();
   for (let i=state.fish.length-1;i>=0;i--){
     const f = state.fish[i];
     f.worldX += f.vx * dt;
     f.ph += dt*3;
-    // 往前看一段距離，只在世界邊界轉頭（魚可自由游進污染區）
+    // 往前看一段距離，在世界邊界或港口前轉頭（魚停留在開闊海域，不游進建築區）
     const ahead = f.worldX + Math.sign(f.vx) * 22;
-    if (ahead < 150 || ahead > DOCK_X-150) f.vx = -f.vx;
-    if (f.worldX<120||f.worldX>DOCK_X-80){ state.fish.splice(i,1); }
+    if (ahead < 150 || ahead > SHOPS.recycler.x-180) f.vx = -f.vx;
+    if (f.worldX<120||f.worldX>SHOPS.recycler.x-120){ state.fish.splice(i,1); }
   }
-  // 夜晚切換時清掉不合時宜的魚
-  if (state.fish.length>target+12) state.fish.splice(0, state.fish.length-target);
+  // 海洋變髒（target 下降）時，逐步把多餘的魚移除，讓魚數忠實反映健康度
+  if (state.fish.length>target+6) state.fish.splice(0, state.fish.length-target);
 
-  // 海面一律維持一定數量的漂浮垃圾（供撈取機與任務使用）；污染區附近會更多
-  const anyPollution = state.zones.some(z => z.p > 0.02);
-  const trashTarget = 6 + Math.round(state.zones.reduce((a,z)=>a+z.p* (z.x1-z.x0)/500, 0));
-  if (state.trash.length < trashTarget && Math.random()<0.6) {
-    if (anyPollution) {                         // 有污染 → 偏好生在污染區附近
-      const z = state.zones[(Math.random()*state.zones.length)|0];
+  // 漂浮垃圾量＝跟著污染走：海越髒垃圾越多，全部淨化後不再產生
+  const dirtyZones = state.zones.filter(z => z.p > 0.05);
+  const pollutionAmt = dirtyZones.reduce((a,z)=>a+z.p*(z.x1-z.x0), 0);
+  const trashTarget = dirtyZones.length ? Math.max(6, Math.round(pollutionAmt/70)) : 0;
+  if (state.trash.length < trashTarget && Math.random()<0.7) {
+    if (dirtyZones.length && Math.random()<0.55) {   // 約一半偏好生在污染區附近，其餘散佈整片海域
+      const z = dirtyZones[(Math.random()*dirtyZones.length)|0];
       spawnTrash(z.x0 + Math.random()*(z.x1-z.x0));
-    } else {                                    // 無污染 → 隨機散佈海面
+    } else {
       spawnTrash();
     }
   }
+  // 海洋變乾淨（target 下降）→ 把畫面外多餘的垃圾逐步移除，避免玩家看到憑空消失
+  if (state.trash.length > trashTarget) {
+    const cx = cam();
+    for (let i=state.trash.length-1; i>=0 && state.trash.length>trashTarget; i--){
+      const sx = state.trash[i].worldX - cx;
+      if (sx < -80 || sx > view.w+80) state.trash.splice(i,1);
+    }
+  }
   for (const tr of state.trash){ tr.ph += dt*1.5; tr.worldX += tr.drift*dt; }
+
+  // 受困海龜事件
+  updateTurtle(dt);
 
   // 已放置的環保機器（自動運作；耐久耗盡會損壞消失）
   for (let mi = state.placed.length - 1; mi >= 0; mi--) {
@@ -1077,7 +1231,7 @@ function update(dt) {
   for (const z of state.zones) {
     if (z.p > 0.02) {
       z.x0 = Math.max(180, z.x0 - POLLUTION_EXPAND * dt);
-      z.x1 = Math.min(DOCK_X - 180, z.x1 + POLLUTION_EXPAND * dt);
+      z.x1 = Math.min(SHOPS.recycler.x - 110, z.x1 + POLLUTION_EXPAND * dt);
       z.p  = Math.min(1, z.p + POLLUTION_CREEP * dt);   // 淨化機 0.018/s 遠快於此，放對位置仍能清乾淨
     }
   }
@@ -1102,28 +1256,25 @@ function updateLine(dt) {
   const spd = 230;
   if (L.phase==='down') {
     L.depth += spd*dt;
-    // 嘗試咬鉤
     if (!L.caught) {
       const tipX = state.boat.x, tipY = surfaceY(state.boat.x,state.time)+L.depth;
       const cr = 26 + state.up.rod*3;
-      for (let i=0;i<state.fish.length;i++){
-        const f=state.fish[i];
-        const fy = fishScreenY(f, state.time);
-        if (Math.abs(f.worldX-tipX)<cr && Math.abs(fy-tipY)<cr){
-          L.caught = state.fish.splice(i,1)[0];
-          L.phase='up'; break;
+      // 受困海龜：鉤子碰到 → 進入救援小遊戲（海龜不會被收進背包）
+      const tu = state.turtle;
+      if (tu && tu.hideT<=0){
+        const tyy = trashScreenY(tu, state.time);
+        if (Math.abs(tu.worldX-tipX)<cr+12 && Math.abs(tyy-tipY)<cr+12){
+          L.active=false; L.depth=0; L.phase='idle'; L.caught=null;
+          startRescue(); return;
         }
       }
-      // 海底螃蟹：鉤子接近海底且停在螃蟹上方才能釣到
-      if (!L.caught && tipY > waterBottom()-25) {
-        for (const cb of SEABED.crabs) {
-          if (cb.hideT > 0) continue;
-          const wx = cb.base + Math.sin(state.time*cb.sp + cb.ph) * cb.range;
-          if (Math.abs(wx - tipX) < cr+6) {
-            cb.hideT = 14;                       // 釣走後 14 秒重生
-            L.caught = { t: CRAB_TYPE, worldX: wx };
-            L.phase = 'up'; break;
-          }
+      // 海洋垃圾：碰到就鉤起
+      for (let i=0;i<state.trash.length;i++){
+        const tr=state.trash[i];
+        const ty=trashScreenY(tr, state.time);
+        if (Math.abs(tr.worldX-tipX)<cr && Math.abs(ty-tipY)<cr){
+          L.caught = state.trash.splice(i,1)[0];
+          L.phase='up'; break;
         }
       }
     }
@@ -1132,52 +1283,134 @@ function updateLine(dt) {
     L.depth -= spd*1.15*dt;
     if (L.depth<=0){
       L.depth=0; L.active=false;
-      if (L.caught) deliverFish(L.caught);
+      if (L.caught) deliverTrash(L.caught);
       L.phase='idle'; L.caught=null;
     }
   }
 }
 
-function deliverFish(f) {
-  const polluted = pollutionAt(state.boat.x) > 0.3;   // 在污染區釣到 → 污染魚（賣不了好價）
-  combo++; comboTimer = 6;
-  const value = f.t.value;                              // 魚價就是基準價（賣出時再 ×行情），不再有倍率
-  state.hold.push({ key:f.t.key, value, polluted });
-  state.stats.caught++;
-  if (polluted) state.stats.polluted++;
-  // 連釣獎勵：連續釣到就「直接給少量金幣」（不影響魚價，簡單明瞭）
-  let comboBonus = 0;
-  if (!polluted && combo >= 2) {
-    comboBonus = Math.min(combo, 6) * 2;               // 第2連 +4、第3連 +6 … 最多 +12
-    state.coins += comboBonus; state.stats.earned += comboBonus;
-  }
+// 釣起一件垃圾 → 收進背包（背包滿了就放回海裡）
+function deliverTrash(tr) {
   const sx = state.boat.x - cam();
   const sy = surfaceY(state.boat.x,state.time)-30;
+  if (state.hold.length >= holdFor(state.up.hold)) {
+    state.trash.push(tr);   // 放回海面
+    toast(sx, sy, '背包滿了！先去海岸清空 ▶', 'warn'); sfx('error');
+    return;
+  }
+  combo++; comboTimer = 6;
+  state.hold.push({ key:tr.key, emoji:tr.emoji, name:tr.name });
+  state.stats.caught++;
   addSparkle(state.boat.x, surfaceY(state.boat.x,state.time));
-  if (polluted) { toast(sx, sy, '🤢 污染的'+f.t.name+f.t.emoji, 'warn'); sfx('trash'); }
-  else { toast(sx, sy, '釣到 '+f.t.name+' '+f.t.emoji+(comboBonus>0?`　連釣 +${comboBonus}🪙`:''), 'eco'); sfx('catch'); }
+  let comboBonus = 0;
+  if (combo >= 2) {                                    // 連續撈起 → 小額獎金
+    comboBonus = Math.min(combo, 6) * 2;
+    state.coins += comboBonus; state.stats.earned += comboBonus;
+  }
+  toast(sx, sy, '撈到 '+tr.name+' '+tr.emoji+(comboBonus>0?`　連撈 +${comboBonus}🪙`:''), 'eco');
+  sfx('catch');
   checkQuest(); save();
 }
 
-function nearDock(){ return state.boat.x > DOCK_X - 130; }
-
-function sellAll() {
-  if (state.hold.length===0){ return 0; }
-  const mult = (0.7 + state.eco/100*0.6) * (1 + state.up.sonar*0.08);
-  let total=0, pollutedN=0;
-  for (const f of state.hold) {
-    if (f.polluted) { total += 5 + Math.floor(Math.random()*6); pollutedN++; }  // 污染魚只值 5~10 元
-    else total += Math.round(f.value*mult);
-  }
-  state.coins += total; state.stats.sold += state.hold.length; state.stats.earned+=total;
-  const n=state.hold.length; state.hold=[];
-  const extra = pollutedN ? `（含 ${pollutedN} 條污染魚賤價）` : '';
-  toast(view.w/2, view.h*0.4, `賣出 ${n} 條魚${extra}  +${total} 🪙`, 'coin');
-  sfx('sell'); checkQuest(); save(); updateHUD();
-  return total;
+// 靠岸偵測：回傳最近建築的 key（不在範圍內回 null）
+function nearShop(){
+  let best=null, bd=SHOP_R;
+  for (const k in SHOPS){ const d=Math.abs(state.boat.x - SHOPS[k].x); if (d<bd){ bd=d; best=k; } }
+  return best;
 }
 
-function bumpEco(d){ /* 立即影響但仍會被平滑追回；此處只做提示用途 */ }
+// ============================================================
+//  受困海洋生物事件（海龜 / 水母，都會被塑膠袋纏住）
+// ============================================================
+const CAPTIVE_KINDS = {
+  turtle: { name:'海龜', emoji:'🐢' },
+  jelly:  { name:'水母', emoji:'🪼' },
+};
+function spawnTurtle(){
+  const x = 320 + Math.random()*(SHOPS.recycler.x - 640);
+  const kind = Math.random()<0.5 ? 'turtle' : 'jelly';
+  state.turtle = {
+    kind,
+    worldX:x,
+    depth: 26 + Math.random()*Math.max(30, columnH()*0.4),
+    vx:(Math.random()<0.5?-1:1)*(kind==='jelly'?11:18),
+    ph:Math.random()*Math.PI*2,
+    life: 24,        // 沒被救到的話，撐這麼久後自行游走
+    hideT:0,
+  };
+}
+function updateTurtle(dt){
+  const tu = state.turtle;
+  if (!tu){
+    turtleSpawnT -= dt;
+    if (turtleSpawnT <= 0) spawnTurtle();
+    return;
+  }
+  tu.ph += dt*2;
+  tu.worldX += tu.vx*dt;
+  const ahead = tu.worldX + Math.sign(tu.vx)*30;
+  if (ahead < 220 || ahead > SHOPS.recycler.x - 140) tu.vx = -tu.vx;
+  tu.life -= dt;
+  if (tu.life <= 0){            // 純錯過：海龜自行游走，下次再出現
+    state.turtle = null;
+    turtleSpawnT = 28 + Math.random()*24;
+  }
+}
+
+// ---- 拯救海龜小遊戲（快速連點解開塑膠袋）----
+const turtleOverlay = () => document.getElementById('turtle-overlay');
+function captiveInfo(){
+  const k = (state.turtle && state.turtle.kind) || 'turtle';
+  return CAPTIVE_KINDS[k] || CAPTIVE_KINDS.turtle;
+}
+function startRescue(){
+  if (rescue) return;
+  clearKeys();                 // 進入救援畫面時停船
+  rescue = { taps:0, need: 24 + Math.floor(Math.random()*9), time: 6, max: 6 };
+  const info = captiveInfo();
+  document.getElementById('turtleTitle').textContent = `${info.emoji} 受困${info.name}！`;
+  document.getElementById('turtleArt').textContent = info.emoji;
+  document.getElementById('turtleMsg').innerHTML = `${info.name}被<b>塑膠袋</b>纏住了！<br/><b>快速連點下方按鈕</b>幫牠掙脫！`;
+  turtleOverlay().classList.remove('hidden');
+  updateRescueUI();
+  sfx('cast');
+}
+function updateRescue(dt){
+  if (!rescue) return;
+  rescue.time -= dt;
+  if (rescue.time <= 0){ endRescue(false); return; }
+  updateRescueUI();
+}
+function rescueTap(){
+  if (!rescue) return;
+  rescue.taps++;
+  sfx('trash');
+  const art = document.getElementById('turtleArt');
+  if (art) art.textContent = (rescue.taps % 2) ? captiveInfo().emoji : captiveInfo().emoji + '💨';
+  if (rescue.taps >= rescue.need) endRescue(true);
+  else updateRescueUI();
+}
+function updateRescueUI(){
+  if (!rescue) return;
+  document.getElementById('turtleFill').style.width = Math.min(100, rescue.taps/rescue.need*100)+'%';
+  document.getElementById('turtleTime').style.width = Math.max(0, rescue.time/rescue.max*100)+'%';
+}
+function endRescue(success){
+  turtleOverlay().classList.add('hidden');
+  const info = captiveInfo();
+  if (success){
+    const reward = 60 + Math.floor(Math.random()*41);   // 60~100
+    state.coins += reward; state.stats.earned += reward; state.stats.rescued++;
+    toast(view.w/2, view.h*0.4, `${info.emoji}✨ 成功解救${info.name}！+${reward}🪙`, 'coin'); sfx('clean');
+    checkQuest();
+  } else {
+    toast(view.w/2, view.h*0.4, `${info.emoji} ${info.name}掙脫游走了…下次手速再快一點！`, 'warn'); sfx('error');
+  }
+  state.turtle = null;
+  turtleSpawnT = 28 + Math.random()*24;
+  rescue = null;
+  save();
+}
 
 // ============================================================
 //  任務
@@ -1285,6 +1518,9 @@ function render() {
   // 漂浮垃圾
   drawTrash(c, t);
 
+  // 受困海龜
+  drawTurtle(c, t);
+
   // 放置在海上的環保機器
   drawPlaced(c, t);
 
@@ -1306,9 +1542,12 @@ function render() {
   // Combo 連釣顯示
   drawCombo();
 
-  // 靠岸提示
-  const hideDock = !nearDock() || !running;
-  if (_hudPrev.hideDock !== hideDock){ _hudPrev.hideDock = hideDock; (HUD._dockHint || (HUD._dockHint = document.getElementById('dockHint'))).classList.toggle('hidden', hideDock); }
+  // 靠岸提示（顯示最近的建築名稱）
+  const ns = running ? nearShop() : null;
+  const hideDock = !ns || shopOpen() || paused;
+  const dh = (HUD._dockHint || (HUD._dockHint = document.getElementById('dockHint')));
+  if (_hudPrev.hideDock !== hideDock){ _hudPrev.hideDock = hideDock; dh.classList.toggle('hidden', hideDock); }
+  if (ns && _hudPrev.dockShop !== ns){ _hudPrev.dockShop = ns; dh.textContent = `${SHOPS[ns].icon} 進入「${SHOPS[ns].name}」`; }
 }
 
 function drawCelestial(h, W, H) {
@@ -1371,10 +1610,10 @@ function drawBirds(c, t) {
 // 畫面外目標的方向提示
 function drawNav(c) {
   const y = seaY + 40;
-  // 漁港在右方畫面外
-  const dockSx = DOCK_X - c;
-  if (dockSx > view.w - 8) {
-    const dist = Math.max(0, Math.round((DOCK_X - state.boat.x)));
+  // 海岸建築群在右方畫面外
+  const harborSx = SHOPS.recycler.x - c;
+  if (harborSx > view.w - 8) {
+    const dist = Math.max(0, Math.round((SHOPS.recycler.x - state.boat.x)));
     drawNavChip(view.w - 64, y, '🏪▶', dist + 'm', 'rgba(255,204,68,0.9)', '#3a2700');
   }
   // 污染區在畫面外
@@ -1383,6 +1622,14 @@ function drawNav(c) {
     const mid = (z.x0 + z.x1)/2, sx = mid - c;
     if (sx < 0) drawNavChip(40, y + 44, '◀⚠', '', 'rgba(70,90,60,0.9)', '#fff');
     else if (sx > view.w) drawNavChip(view.w - 40, y + 44, '⚠▶', '', 'rgba(70,90,60,0.9)', '#fff');
+  }
+  // 受困生物在畫面外 → 紅色指示，提醒玩家把握時間
+  const tu = state.turtle;
+  if (tu && tu.hideT<=0){
+    const emo = (CAPTIVE_KINDS[tu.kind] || CAPTIVE_KINDS.turtle).emoji;
+    const sx = tu.worldX - c;
+    if (sx < 0) drawNavChip(40, y, '◀'+emo, '快去', 'rgba(255,80,90,0.92)', '#fff');
+    else if (sx > view.w) drawNavChip(view.w - 64, y + 44, emo+'▶', '快去', 'rgba(255,80,90,0.92)', '#fff');
   }
 }
 function drawNavChip(x, y, label, sub, bg, fg) {
@@ -1409,7 +1656,7 @@ function drawCombo() {
   ctx.fillStyle=`rgba(255,170,40,${alpha})`;
   // 任務橫幅已移到最上方，這裡往上移到海面上方、與橫幅之間留出空間
   const comboY = seaY * 0.7;
-  ctx.fillText(`🔥 連釣 ${combo} 連！`, view.w/2, comboY);
+  ctx.fillText(`🔥 連撈 ${combo} 連！`, view.w/2, comboY);
   // 計時條
   const bw=120, bx=view.w/2-bw/2, by=comboY+18;
   ctx.fillStyle=`rgba(255,255,255,${0.2*alpha})`; ctx.fillRect(bx,by,bw,4);
@@ -1460,17 +1707,24 @@ function drawSea(c, t, night) {
 }
 
 // ---------- 海底裝飾（固定種子，隨攝影機捲動） ----------
+// rank：出現門檻 0~1，海洋越乾淨（lifeFrac 越高）才會陸續出現越多生物
+const rankOf = x => ((Math.floor(x*0.37)%100)+1)/101;
 const SEABED = (() => {
   const weeds=[], rocks=[], decos=[], crabs=[];
   for (let x=120; x<WORLD_W-160; x += 58 + (Math.floor(x*7)%46))
-    weeds.push({ x, h: 20 + (Math.floor(x*1.7)%26), blades: 2 + (x%3), hue: (x%2)?'#2faa6a':'#48c07a', ph:(x%628)/100 });
+    weeds.push({ x, h: 20 + (Math.floor(x*1.7)%26), blades: 2 + (x%3), hue: (x%2)?'#2faa6a':'#48c07a', ph:(x%628)/100, rank: rankOf(x) });
   for (let x=320; x<WORLD_W-160; x += 210 + (Math.floor(x*1.1)%140))
-    rocks.push({ x, r: 9 + (Math.floor(x*0.3)%9) });
+    rocks.push({ x, r: 9 + (Math.floor(x*0.3)%9) });   // 石頭是地質，一律顯示
   for (let x=220; x<WORLD_W-160; x += 150 + (Math.floor(x*0.5)%90))
-    decos.push({ x, k: x%2 });
-  for (let i=0;i<6;i++) crabs.push({ base: 380 + i*420, range: 55 + i*14, sp: 0.45 + i*0.1, ph: i*1.3, hideT: 0 });
+    decos.push({ x, k: Math.floor(x)%3, rank: rankOf(x+40) });   // 0=貝殼 1=海星 2=海螺
+  for (let i=0;i<6;i++) crabs.push({ base: 380 + i*420, range: 55 + i*14, sp: 0.45 + i*0.1, ph: i*1.3, hideT: 0, rank: (i+0.5)/6 });
   return { weeds, rocks, decos, crabs };
 })();
+// 海洋生機程度：依已淨化的污染區數量，剩 1~2 區才開始陸續出現生物，全淨化最茂盛
+function lifeFracNow(){
+  const total = state.zones.length, cleaned = cleanedZones(state);
+  return total>1 ? Math.max(0, (cleaned-1)/(total-1)) : (cleaned>0?1:0);
+}
 
 function drawSeabed(c, t) {
   const top = view.h - 46;
@@ -1487,16 +1741,18 @@ function drawSeabed(c, t) {
   ctx.beginPath();
   for (let sx=0; sx<=view.w; sx+=14){ const yy=top+Math.sin((c+sx)*0.02)*5; if(sx===0)ctx.moveTo(sx,yy); else ctx.lineTo(sx,yy); }
   ctx.stroke();
-  // 海草
-  for (const w of SEABED.weeds){ const x=w.x-c; if(x<-30||x>view.w+30) continue; drawSeaweed(x, top+4, w, t); }
-  // 石頭
+  const life = lifeFracNow();   // 海洋越乾淨，海底生物越多
+  // 海草（隨乾淨程度長出來）
+  for (const w of SEABED.weeds){ if (w.rank > life) continue; const x=w.x-c; if(x<-30||x>view.w+30) continue; drawSeaweed(x, top+4, w, t); }
+  // 石頭（地質，一律顯示）
   for (const r of SEABED.rocks){ const x=r.x-c; if(x<-30||x>view.w+30) continue;
     ctx.fillStyle='#6f7a82'; ctx.beginPath(); ctx.ellipse(x, top+5, r.r, r.r*0.6, 0, Math.PI, 0); ctx.fill();
     ctx.fillStyle='#5c666d'; ctx.beginPath(); ctx.ellipse(x-r.r*0.3, top+5, r.r*0.4, r.r*0.28, 0, Math.PI, 0); ctx.fill(); }
-  // 貝殼 / 海星
-  for (const d of SEABED.decos){ const x=d.x-c; if(x<-20||x>view.w+20) continue; if(d.k) drawStarfish(x, top); else drawShell(x, top); }
-  // 螃蟹（左右走動，被釣走時暫時消失）
-  for (const cr of SEABED.crabs){ if(cr.hideT>0) continue; const wx=cr.base + Math.sin(t*cr.sp+cr.ph)*cr.range; const x=wx-c; if(x<-30||x>view.w+30) continue; drawCrab(x, top+2, t, cr); }
+  // 貝殼 / 海星 / 海螺（乾淨後才陸續出現）
+  for (const d of SEABED.decos){ if (d.rank > life) continue; const x=d.x-c; if(x<-20||x>view.w+20) continue;
+    if(d.k===1) drawStarfish(x, top); else if(d.k===2) drawSnail(x, top); else drawShell(x, top); }
+  // 螃蟹（乾淨後才出現；左右走動）
+  for (const cr of SEABED.crabs){ if(cr.hideT>0 || cr.rank > life) continue; const wx=cr.base + Math.sin(t*cr.sp+cr.ph)*cr.range; const x=wx-c; if(x<-30||x>view.w+30) continue; drawCrab(x, top+2, t, cr); }
   ctx.restore();
 }
 function drawSeaweed(x, baseY, w, t) {
@@ -1543,6 +1799,19 @@ function drawShell(x, gy) {
   for (let i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(Math.PI+i*Math.PI/4)*4, Math.sin(Math.PI+i*Math.PI/4)*4); ctx.stroke(); }
   ctx.restore();
 }
+// 海螺：螺旋殼
+function drawSnail(x, gy) {
+  ctx.save(); ctx.translate(x, gy-4);
+  ctx.fillStyle='#e9b07a';
+  ctx.beginPath(); ctx.moveTo(-4,4);
+  for (let a=0;a<14;a++){ const ang=a*0.6, r=1+a*0.42; ctx.lineTo(Math.cos(ang)*r, 4-Math.sin(ang)*r); }
+  ctx.lineTo(4,4); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#c98a52'; ctx.lineWidth=0.7;
+  ctx.beginPath();
+  for (let a=0;a<14;a++){ const ang=a*0.6, r=1+a*0.42; const px=Math.cos(ang)*r, py=4-Math.sin(ang)*r; if(a===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.stroke();
+  ctx.restore();
+}
 
 function drawPollution(c, t) {
   for (const z of state.zones) {
@@ -1550,30 +1819,36 @@ function drawPollution(c, t) {
     const x0=z.x0-c, x1=z.x1-c;
     if (x1<-20||x0>view.w+20) continue;
     ctx.save();
-    // 深色污染水
+    // 鮮豔的污染水（亮紫洋紅，與藍色海水對比強烈，白天夜晚都清楚）
     const g=ctx.createLinearGradient(0,seaY,0,view.h);
-    g.addColorStop(0,`rgba(40,55,40,${0.15*z.p})`);
-    g.addColorStop(1,`rgba(20,35,25,${0.55*z.p})`);
+    g.addColorStop(0,`rgba(214,68,196,${0.45*z.p})`);
+    g.addColorStop(0.5,`rgba(170,46,200,${0.55*z.p})`);
+    g.addColorStop(1,`rgba(120,28,165,${0.78*z.p})`);
     ctx.fillStyle=g;
     ctx.beginPath();
     ctx.moveTo(x0, view.h);
     for (let sx=x0;sx<=x1;sx+=10){ ctx.lineTo(sx, surfaceY(c+sx,t)); }
     ctx.lineTo(x1, view.h); ctx.closePath(); ctx.fill();
-    // 塑膠微粒
-    const n=Math.floor((z.x1-z.x0)/24 * z.p);
-    ctx.fillStyle=`rgba(220,225,210,${0.5*z.p})`;
+    // 海面上的鮮豔污染帶（讓玩家從水面就一眼看到污染區範圍）
+    ctx.lineWidth=4; ctx.lineCap='round';
+    ctx.strokeStyle=`rgba(255,90,220,${Math.min(0.9,0.5+0.4*z.p)})`;
+    ctx.beginPath();
+    for (let sx=x0;sx<=x1;sx+=10){ const yy=surfaceY(c+sx,t); if(sx===x0)ctx.moveTo(sx,yy); else ctx.lineTo(sx,yy); }
+    ctx.stroke();
+    // 塑膠微粒（亮黃綠光點，在紫色上對比鮮明）
+    const n=Math.floor((z.x1-z.x0)/22 * z.p);
+    ctx.fillStyle=`rgba(214,255,140,${0.7*z.p})`;
     for (let i=0;i<n;i++){
       const wx=z.x0+((i*53)%(z.x1-z.x0));
       const px=wx-c; if(px<-5||px>view.w+5) continue;
       const py=surfaceY(c+ (wx-c),t)+30+((i*37)%(view.h-seaY-40)) + Math.sin(t*1.3+i)*4;
-      ctx.beginPath(); ctx.arc(px,py,1.6+ (i%2),0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(px,py,1.8+ (i%2),0,7); ctx.fill();
     }
     ctx.restore();
   }
 }
 
 function drawFish(c, t) {
-  const showInfo = state.up.sonar>0;
   for (const f of state.fish) {
     const x=f.worldX-c; if(x<-40||x>view.w+40) continue;
     const y=fishScreenY(f, t);
@@ -1581,7 +1856,6 @@ function drawFish(c, t) {
     ctx.save(); ctx.translate(x,y); ctx.scale(dir,1);
     drawFishBody(f.t, f.ph);
     ctx.restore();
-    if (showInfo){ ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='9px sans-serif'; ctx.textAlign='center'; ctx.fillText(f.t.value+'🪙', x, y-13); }
   }
 }
 function fishEye(ex, ey, r) {
@@ -1668,11 +1942,72 @@ function drawTrash(c, t) {
   ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for (const tr of state.trash) {
     const x=tr.worldX-c; if(x<-30||x>view.w+30) continue;
-    const y=surfaceY(tr.worldX,t)+4+Math.sin(tr.ph)*3;
+    const y=trashScreenY(tr,t);
     ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(tr.ph*0.5)*0.2);
     ctx.fillText(tr.emoji,0,0); ctx.restore();
   }
   ctx.textBaseline='alphabetic';
+}
+
+// 受困海龜（頭上紅色 ❗，提示可用釣竿碰觸救援）
+// 受困生物（海龜 / 水母）：畫身體 → 纏住的塑膠袋 → 頭上 ❗
+function drawTurtle(c, t) {
+  const tu = state.turtle; if (!tu || tu.hideT>0) return;
+  const x = tu.worldX - c; if (x<-40||x>view.w+40) return;
+  const y = trashScreenY(tu, t);
+  ctx.save(); ctx.translate(x,y);
+  if (tu.kind === 'jelly') drawJellyBody(tu, t);
+  else drawTurtleBody(tu, t);
+  // 纏住的塑膠袋（半透明白，蓋在身上）
+  ctx.fillStyle='rgba(238,245,253,0.5)';
+  ctx.beginPath(); ctx.ellipse(0,1,17,13,0,0,7); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1; ctx.stroke();
+  // 頭上紅色驚嘆號泡泡
+  const bob = Math.sin(t*4)*2;
+  ctx.fillStyle='rgba(255,255,255,0.95)';
+  ctx.beginPath(); ctx.arc(0,-24+bob,9,0,7); ctx.fill();
+  ctx.fillStyle='#ff3b46'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('❗',0,-23+bob);
+  ctx.textBaseline='alphabetic';
+  ctx.restore();
+}
+function drawTurtleBody(tu, t) {
+  const dir = tu.vx<0 ? -1 : 1;
+  ctx.save(); ctx.scale(dir,1);
+  ctx.fillStyle='#2f7d52'; ctx.beginPath(); ctx.ellipse(0,0,13,9,0,0,7); ctx.fill();
+  ctx.fillStyle='#256643';
+  for (let i=-1;i<=1;i++){ ctx.beginPath(); ctx.ellipse(i*7,0,3.4,4,0,0,7); ctx.fill(); }
+  ctx.fillStyle='#3fa06a'; ctx.beginPath(); ctx.arc(13,-1,4.5,0,7); ctx.fill();
+  ctx.fillStyle='#06222e'; ctx.beginPath(); ctx.arc(15,-2,1.2,0,7); ctx.fill();
+  ctx.fillStyle='#3fa06a';
+  ctx.beginPath(); ctx.ellipse(-3,7,5,3,0.5,0,7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(6,7,5,3,-0.5,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawJellyBody(tu, t) {
+  const sway = Math.sin(t*2 + tu.ph);
+  // 觸手（先畫，藏在傘下）
+  ctx.strokeStyle='rgba(232,150,205,0.85)'; ctx.lineWidth=2; ctx.lineCap='round';
+  for (let i=-2;i<=2;i++){
+    const tx = i*3.5;
+    ctx.beginPath(); ctx.moveTo(tx,2);
+    ctx.quadraticCurveTo(tx+sway*3, 12, tx+sway*5, 21);
+    ctx.stroke();
+  }
+  // 鐘形傘體（半透明粉紫）
+  ctx.fillStyle='rgba(229,130,200,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(-12,3);
+  ctx.quadraticCurveTo(-13,-12,0,-12);
+  ctx.quadraticCurveTo(13,-12,12,3);
+  ctx.quadraticCurveTo(8,6,5,3);
+  ctx.quadraticCurveTo(2,7,-1,3);
+  ctx.quadraticCurveTo(-4,7,-7,3);
+  ctx.quadraticCurveTo(-10,6,-12,3);
+  ctx.closePath(); ctx.fill();
+  // 傘內花紋 + 高光
+  ctx.fillStyle='rgba(255,205,235,0.7)'; ctx.beginPath(); ctx.ellipse(0,-5,5,4,0,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(-4,-7,2,3,0,0,7); ctx.fill();
 }
 
 function drawPlaced(c, t) {
@@ -1728,21 +2063,21 @@ function drawLine(c, t) {
   const tipY=surfaceY(state.boat.x,t)+L.depth;
   ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(bx+14, topY); ctx.lineTo(bx+14, tipY); ctx.stroke();
-  // 鉤 / 釣到的魚
-  if (L.caught){ ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText(L.caught.t.emoji, bx+14, tipY+4); }
+  // 鉤 / 鉤到的垃圾
+  if (L.caught){ ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText(L.caught.emoji, bx+14, tipY+4); }
   else {
     ctx.fillStyle='#ddd'; ctx.beginPath(); ctx.arc(bx+14, tipY, 3, 0, 7); ctx.fill();
-    // 附近有魚 → 顯示咬餌提示
+    // 附近有垃圾或海龜 → 顯示提示
     if (L.phase==='down'){
       let bite=false;
-      for (const f of state.fish){
-        const fy=fishScreenY(f, t);
-        if (Math.abs(f.worldX-state.boat.x)<60 && Math.abs(fy-tipY)<55){ bite=true; break; }
+      for (const tr of state.trash){
+        const ty=trashScreenY(tr, t);
+        if (Math.abs(tr.worldX-state.boat.x)<55 && Math.abs(ty-tipY)<50){ bite=true; break; }
       }
-      if (!bite && tipY > waterBottom()-30){
-        for (const cb of SEABED.crabs){ if(cb.hideT>0) continue;
-          const wx=cb.base+Math.sin(t*cb.sp+cb.ph)*cb.range;
-          if (Math.abs(wx-state.boat.x)<60){ bite=true; break; } }
+      const tu=state.turtle;
+      if (tu && tu.hideT<=0){
+        const ty=trashScreenY(tu, t);
+        if (Math.abs(tu.worldX-state.boat.x)<60 && Math.abs(ty-tipY)<60){ bite=true; }
       }
       if (bite){ ctx.font='bold 16px sans-serif'; ctx.fillStyle='#ffcc44'; ctx.fillText('❗', bx+14, tipY-12); }
     }
@@ -1785,92 +2120,75 @@ function drawBoat(c, t) {
   ctx.restore();
 }
 
+const BUILD_STYLE = {
+  recycler: { wall:'#5d6b78', roof:'#39485a', accent:'#9fb4c2', label:'回收商' },
+  micropc:  { wall:'#2f8f7c', roof:'#1f6256', accent:'#8ef0d8', label:'點點塑' },
+  artshop:  { wall:'#c96a8e', roof:'#933f63', accent:'#ffd6e6', label:'海廢文創小舖' },
+};
 function drawDock(c, t) {
-  const x=DOCK_X-c;
-  if (x>view.w+200) return;
-  const y=surfaceY(DOCK_X,t);
+  const left = SHOPS.recycler.x - 70, right = SHOPS.artshop.x + 95;
+  const lx = left - c, rx = right - c;
+  const onScreen = !(rx < -40 || lx > view.w + 40);
   ctx.save();
-  // 棧橋柱
-  ctx.fillStyle='#6b4a2b';
-  for(let i=0;i<4;i++){ ctx.fillRect(x+14+i*48, y, 9, view.h-y); }
-  // 平台
-  ctx.fillStyle='#8a6038'; ctx.fillRect(x, y-12, 185, 14);
-  ctx.fillStyle='#a87a48'; ctx.fillRect(x, y-15, 185, 4);
-
-  // 攤位：紅白條紋遮陽棚 + 木牌
-  const aw=92, ax=x+18, ay=y-70;
-  for(let i=0;i<6;i++){ ctx.fillStyle=(i%2)?'#ffffff':'#d94f4f'; ctx.fillRect(ax+i*(aw/6), ay, aw/6, 13); }
-  // 棚下波浪邊
-  ctx.fillStyle='#d94f4f';
-  for(let i=0;i<6;i++){ ctx.beginPath(); ctx.arc(ax+(i+0.5)*(aw/6), ay+13, aw/12, 0, Math.PI); ctx.fill(); }
-  // 木牌
-  ctx.fillStyle='#f3e4c4'; ctx.fillRect(ax+6, ay+18, aw-12, 18);
-  ctx.strokeStyle='#b9925a'; ctx.lineWidth=1.5; ctx.strokeRect(ax+6, ay+18, aw-12, 18);
-  ctx.fillStyle='#5a3a1a'; ctx.font='bold 12px "Microsoft JhengHei",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('收購魚貨', ax+aw/2, ay+28);
-  ctx.textBaseline='alphabetic';
-
-  // 魚販 + 魚箱
-  drawVendor(x+118, y-12);
-  drawFishCrate(x+152, y-12);
+  if (onScreen) {
+    const y = seaY - 6;          // 碼頭固定在岸邊，不隨海浪上下浮動
+    // 連續木棧道：柱 + 平台
+    ctx.fillStyle='#6b4a2b';
+    for (let wx=left+10; wx<right; wx+=46){ const px=wx-c; if(px<-20||px>view.w+20) continue; ctx.fillRect(px, y, 9, view.h); }
+    ctx.fillStyle='#8a6038'; ctx.fillRect(lx, y-12, rx-lx, 16);
+    ctx.fillStyle='#a87a48'; ctx.fillRect(lx, y-15, rx-lx, 4);
+  }
+  const near = nearShop();
+  drawBuilding('recycler', c, t, near==='recycler');
+  drawBuilding('micropc',  c, t, near==='micropc');
+  drawBuilding('artshop',  c, t, near==='artshop');
   ctx.restore();
 }
 
-// 漁港魚販小人（戴漁夫帽、揮手）
-function drawVendor(px, gy) {
+// 單棟海岸建築：主體 + 屋頂 + 招牌 + icon；靠近時發光並提示
+function drawBuilding(key, c, t, near) {
+  const shop = SHOPS[key], st = BUILD_STYLE[key];
+  const x = shop.x - c; if (x < -90 || x > view.w + 90) return;
+  const baseY = seaY - 18;     // 固定在棧道上，不隨海浪浮動
+  const w = 80, h = 56, top = baseY - h;
   ctx.save();
-  ctx.translate(px, gy);
-  // 鞋 + 腿
-  ctx.fillStyle='#34506a'; ctx.fillRect(-6,-12,4,12); ctx.fillRect(2,-12,4,12);
-  ctx.fillStyle='#222'; ctx.fillRect(-7,-3,5,3); ctx.fillRect(1,-3,5,3);
-  // 身體（圓潤）
-  ctx.fillStyle='#2e9bb0';
-  ctx.beginPath(); ctx.moveTo(-8,-30); ctx.quadraticCurveTo(-10,-20,-7,-12);
-  ctx.lineTo(7,-12); ctx.quadraticCurveTo(10,-20,8,-30); ctx.closePath(); ctx.fill();
-  // 白圍裙 + 口袋
-  ctx.fillStyle='#f4f7f3';
-  ctx.beginPath(); ctx.moveTo(-5,-26); ctx.lineTo(5,-26); ctx.lineTo(6,-12); ctx.lineTo(-6,-12); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle='#d4ddd0'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-3,-19); ctx.lineTo(3,-19); ctx.stroke();
-  // 手臂（左手揮手、右手垂下）
-  ctx.strokeStyle='#eed0b0'; ctx.lineWidth=3.2; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-7,-28); ctx.lineTo(-14,-36); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(7,-27); ctx.lineTo(12,-18); ctx.stroke();
-  ctx.fillStyle='#eed0b0'; ctx.beginPath(); ctx.arc(-14,-37,2.2,0,7); ctx.fill();
-  // 頭 + 耳朵
-  ctx.beginPath(); ctx.arc(0,-37,7.5,0,7); ctx.fill();
-  ctx.beginPath(); ctx.arc(-7.5,-36,1.5,0,7); ctx.arc(7.5,-36,1.5,0,7); ctx.fill();
-  // 漁夫帽
-  ctx.fillStyle='#2b6f88';
-  ctx.beginPath(); ctx.ellipse(0,-43,9,3,0,0,7); ctx.fill();
-  ctx.beginPath(); ctx.arc(0,-44,6,Math.PI,0); ctx.fill(); ctx.fillRect(-6,-44,12,2);
-  // 腮紅
-  ctx.fillStyle='rgba(255,150,150,0.55)';
-  ctx.beginPath(); ctx.arc(-4.5,-35,1.7,0,7); ctx.arc(4.5,-35,1.7,0,7); ctx.fill();
-  // 眼睛
-  ctx.fillStyle='#3a2410';
-  ctx.beginPath(); ctx.arc(-2.6,-37.5,1.1,0,7); ctx.arc(2.6,-37.5,1.1,0,7); ctx.fill();
-  // 微笑
-  ctx.strokeStyle='#3a2410'; ctx.lineWidth=1.2;
-  ctx.beginPath(); ctx.arc(0,-35.5,2.4,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
-  ctx.restore();
-}
-
-// 一箱魚
-function drawFishCrate(px, gy) {
-  ctx.save();
-  ctx.translate(px, gy);
-  ctx.fillStyle='#9c6b3f'; ctx.fillRect(-13,-15,26,15);
-  ctx.fillStyle='#7d5430'; ctx.fillRect(-13,-15,26,3);
-  ctx.strokeStyle='#5e3f24'; ctx.lineWidth=1; ctx.strokeRect(-13,-15,26,15);
-  // 兩條魚露出箱口
-  ctx.fillStyle='#8fc5e2';
-  ctx.save(); ctx.translate(-5,-15); ctx.rotate(-0.5);
-  ctx.beginPath(); ctx.ellipse(0,0,8,3.5,0,0,7); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(12,-4); ctx.lineTo(12,4); ctx.fill(); ctx.restore();
-  ctx.fillStyle='#ff9a6c';
-  ctx.save(); ctx.translate(6,-16); ctx.rotate(-0.85);
-  ctx.beginPath(); ctx.ellipse(0,0,7,3,0,0,7); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(10,-3); ctx.lineTo(10,3); ctx.fill(); ctx.restore();
+  if (near){ ctx.shadowColor = 'rgba(255,220,120,0.9)'; ctx.shadowBlur = 22; }
+  // 牆體
+  ctx.fillStyle = st.wall; ctx.fillRect(x - w/2, top, w, h);
+  ctx.shadowBlur = 0;
+  // 屋頂
+  ctx.fillStyle = st.roof;
+  ctx.beginPath(); ctx.moveTo(x - w/2 - 6, top); ctx.lineTo(x, top - 26); ctx.lineTo(x + w/2 + 6, top); ctx.closePath(); ctx.fill();
+  // 門
+  ctx.fillStyle = 'rgba(20,30,40,0.55)'; ctx.fillRect(x - 11, baseY - 26, 22, 26);
+  ctx.fillStyle = st.accent; ctx.fillRect(x - 11, baseY - 28, 22, 3);
+  // 窗
+  ctx.fillStyle = st.accent;
+  ctx.fillRect(x - w/2 + 8, top + 14, 12, 12); ctx.fillRect(x + w/2 - 20, top + 14, 12, 12);
+  // 店家特色裝飾
+  if (key === 'micropc'){ // 工廠煙囪
+    ctx.fillStyle = st.roof; ctx.fillRect(x + 14, top - 22, 9, 18);
+  } else if (key === 'artshop'){ // 紅白遮陽棚
+    for (let i=0;i<5;i++){ ctx.fillStyle=(i%2)?'#ffffff':'#d94f4f'; ctx.fillRect(x - w/2 + i*(w/5), top + h - 2, w/5, 7); }
+  } else if (key === 'recycler'){ // 回收三角標
+    ctx.fillStyle = st.accent; ctx.font='14px sans-serif'; ctx.textAlign='center'; ctx.fillText('♻', x, top + 12);
+  }
+  // 大 icon
+  ctx.font = '26px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(shop.icon, x, top + h/2 + 2);
+  // 招牌（屋頂上方）
+  const sw = Math.max(64, st.label.length * 13 + 16), sy = top - 30;
+  ctx.fillStyle = '#f3e4c4'; ctx.fillRect(x - sw/2, sy - 13, sw, 22);
+  ctx.strokeStyle = '#b9925a'; ctx.lineWidth = 1.5; ctx.strokeRect(x - sw/2, sy - 13, sw, 22);
+  ctx.fillStyle = '#5a3a1a'; ctx.font = 'bold 13px "Microsoft JhengHei",sans-serif';
+  ctx.fillText(shop.icon + st.label, x, sy - 1);
+  // 靠近提示
+  if (near){
+    const bob = Math.sin(t*4)*3;
+    ctx.fillStyle = 'rgba(255,204,68,0.95)'; ctx.font = 'bold 12px "Microsoft JhengHei",sans-serif';
+    ctx.fillText('▼ 點下方按鈕進入', x, baseY + 18 + bob);
+  }
+  ctx.textBaseline = 'alphabetic';
   ctx.restore();
 }
 
@@ -1891,6 +2209,7 @@ const HUD = {
   btnCast:  document.getElementById('btnCast'),
   btnScoop: document.getElementById('btnScoop'),
   btnFilter:document.getElementById('btnFilter'),
+  commission:document.getElementById('commission-hud'),
 };
 const _hudPrev = {};
 function setText(el, key, val){ if (_hudPrev[key] !== val){ _hudPrev[key] = val; el.textContent = val; } }
@@ -1912,9 +2231,27 @@ function updateHUD() {
   const h=(state.time/DAY_LEN)*24; const hh=Math.floor(h), mm=Math.floor((h-hh)*60);
   setText(HUD.clock,     'clock',     String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'));
   setText(HUD.clockIcon, 'clockIcon', isNight()?'🌙':'☀️');
-  // 釣魚鈕：靠岸時變成「賣魚」
-  setText(HUD.btnCast, 'btnCast', nearDock() ? '💰 賣魚 / 商店' : '🎣 釣魚');
+  // 釣魚鈕：靠岸時變成「進入建築」
+  setText(HUD.btnCast, 'btnCast', nearShop() ? '🏪 進入' : '🎣 釣垃圾');
+  renderCommissionHud();
   updateMachineBtns();   // 每幀更新（讓「靠近可收回」即時反映）
+}
+// 常駐委託需求小卡：顯示目前委託還缺哪些垃圾（教學進行中先隱藏）
+function renderCommissionHud() {
+  const el = HUD.commission; if (!el) return;
+  if (!running || tutStep >= 0) {
+    if (_hudPrev.comHtml !== '__hidden') { _hudPrev.comHtml = '__hidden'; el.classList.add('hidden'); }
+    return;
+  }
+  const com = currentCommission(), prog = state.commissionProgress;
+  const parts = [];
+  for (const k in com.need) {
+    const rem = com.need[k] - (prog[k]||0);
+    if (rem > 0) parts.push(`${TRASH_BY_KEY[k].emoji}×${rem}`);
+  }
+  const body = parts.length ? `還需 ${parts.join('　')}` : '材料已備齊，去小舖領獎勵！';
+  const html = `🎨 委託：<b>${com.emoji}${com.title}</b><br/>${body}`;
+  if (_hudPrev.comHtml !== html) { _hudPrev.comHtml = html; el.innerHTML = html; el.classList.remove('hidden'); }
 }
 function updateMachineBtns() {
   const near = type => state.placed.some(p=>p.type===type && Math.abs(p.worldX-state.boat.x)<70);
@@ -1938,38 +2275,39 @@ function toast(x,y,text,cls){
   setTimeout(()=>el.remove(),1100);
 }
 
-// 商店
+// 商店（依靠岸的建築切換內容）
 const shopOverlay=document.getElementById('shop-overlay');
 function shopOpen(){ return !shopOverlay.classList.contains('hidden'); }
-function openShop(){
-  if (!nearDock()) return;
-  if (state.hold.length) sellAll();          // 有魚才賣，空手進商店不跳提示
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.tab==='upgrade'));
-  renderShop('upgrade');
+function openShop(key){
+  if (rescue) return;
+  if (!key) key = nearShop();
+  if (!key) return;
+  clearKeys();                 // 進商店時停船
+  shopOverlay.dataset.shop = key;
+  document.getElementById('shopTitle').textContent = SHOPS[key].icon + ' ' + SHOPS[key].name;
+  renderShop(key);
   shopOverlay.classList.remove('hidden');
 }
 function closeShop(){ shopOverlay.classList.add('hidden'); }
 document.getElementById('shopClose').addEventListener('click', closeShop);
-document.getElementById('dockHint').addEventListener('click', openShop);
-document.querySelectorAll('.tab').forEach(tb=>tb.addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  tb.classList.add('active'); renderShop(tb.dataset.tab);
-}));
+document.getElementById('dockHint').addEventListener('click', ()=>openShop());
 
 function costOf(def){ return Math.round(def.base * Math.pow(def.mul, def.lvl - def.min)); }
 
-function renderShop(tab){
+function renderShop(key){
+  key = key || shopOverlay.dataset.shop;
   document.getElementById('shopCoins').textContent=Math.floor(state.coins);
   const body=document.getElementById('shopBody');
-  if (tab==='info'){ body.innerHTML=renderInfo(); return; }
-  if (tab==='machine'){
+  if (key==='micropc'){
     body.innerHTML=renderMachines();
     body.querySelectorAll('[data-buymachine]').forEach(b=>b.addEventListener('click',()=>buyMachine(b.dataset.buymachine)));
     return;
   }
+  if (key==='artshop'){ renderArtshop(body); return; }
+  // recycler：裝備升級
   let html='';
   for (const k in DEFS){
-    const d=DEFS[k]; if (d.cat!==tab) continue;
+    const d=DEFS[k]; if (d.cat!=='upgrade') continue;
     const owned = d.lvl>d.min || (d.min>0 && d.lvl>=d.min) ? true : d.lvl>d.min;
     const maxed = d.lvl>=d.max;
     const cost = costOf(d);
@@ -1993,14 +2331,14 @@ function renderShop(tab){
     </div>`;
   }
   body.innerHTML=html;
-  body.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buy(b.dataset.buy,tab)));
+  body.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buy(b.dataset.buy)));
 }
 function renderMachines(){
   const desc = {
     scoop: '放到海面上 → 自動撈起附近漂浮垃圾(可賣錢、改善海洋健康)',
-    filter:'放進深色污染區 → 自動淨化塑膠微粒，魚群才會回來',
+    filter:'點點塑的顆粒捕捉技術：放進深色污染區 → 自動過濾塑膠微粒，魚群才會回來',
   };
-  let html=`<div class="info-text" style="margin-bottom:10px">買來後回到海上，用畫面下方按鈕<b>放置</b>機器；可放多台同時運作，靠近自己的機器再按一次可<b>收回</b>移到別區。<br/>⚠️ 機器有<b>耐久度</b>（約 ${MACHINE.scoop.life} 秒），耗盡會<b>損壞報廢消失</b>，需要再購買新的；機器上方的色條代表剩餘耐久（收回會保留剩餘耐久）。</div>`;
+  let html=`<div class="info-text" style="margin-bottom:10px">這裡是<b>🏭點點塑</b>——專門攔截、過濾海洋塑膠微粒的社會企業。買來的機器回到海上，用畫面下方按鈕<b>放置</b>；可放多台同時運作，靠近自己的機器再按一次可<b>收回</b>移到別區。<br/>⚠️ 機器有<b>耐久度</b>（約 ${MACHINE.scoop.life} 秒），耗盡會<b>損壞報廢消失</b>，需要再購買新的；機器上方的色條代表剩餘耐久（收回會保留剩餘耐久）。</div>`;
   for (const k of ['scoop','filter']){
     const m=MACHINE[k]; const owned=machineOwned(k); const maxed=owned>=m.cap; const can=!maxed && state.coins>=m.price;
     const btn = maxed ? `<button class="buy-btn maxed" disabled>已達上限</button>`
@@ -2021,31 +2359,122 @@ function buyMachine(type){
   state.coins -= m.price; state.inv[type]++;
   sfx('buy'); updateMachineBtns(); updateHUD(); checkQuest(); save();
   toast(view.w/2, view.h*0.5, `${m.icon} 已購買，回海上放置！`, 'eco');
-  renderShop('machine');
+  renderShop();
 }
 function checkAllClean(){
   if (allCleanCelebrated) return;
   if (state.zones.every(z=>z.p<=CLEAN_P)){
     allCleanCelebrated = true;
+    state.trash.length = 0;        // 海洋全淨化 → 海面不再有垃圾
     const bonus = 200;
     state.coins += bonus; state.stats.earned += bonus;
-    toast(view.w/2, view.h*0.4, `🎉 全海域淨化完成！獎勵 +${bonus}🪙`, 'coin');
+    toast(view.w/2, view.h*0.4, `🎉 全海域淨化完成！海洋恢復乾淨，獎勵 +${bonus}🪙`, 'coin');
     sfx('sell');
   }
 }
-function renderInfo(){
-  let rows=FISH_TYPES.map(f=>`<div class="fish-row"><span class="fdot" style="background:${f.color}"></span>${f.emoji} ${f.name} ${f.night?'🌙':''}<span class="fval">${f.value}🪙</span></div>`).join('');
-  rows+=`<div class="fish-row"><span class="fdot" style="background:${CRAB_TYPE.color}"></span>${CRAB_TYPE.emoji} ${CRAB_TYPE.name}（海底，需長釣竿）<span class="fval">${CRAB_TYPE.value}🪙</span></div>`;
-  return `<div class="info-text">
-    <h3>🐟 魚種圖鑑</h3>${rows}
-    <h3>🌊 玩法重點</h3>
-    越深的海域有越值錢的魚，升級<b>釣竿</b>才釣得到。<br/>
-    深色海域代表<b>塑膠微粒污染</b>，魚也會游進去，但在污染區釣到的是<b>「污染魚」</b>，賣出時只值 <b>5～10 元</b>，所以要把海洋清乾淨才能賣好價。<br/>
-    ⚠️ 沒處理的污染區會<b>慢慢變寬、變濃</b>，要趁早淨化；用淨化機清乾淨後就會<b>永久保持乾淨</b>，不會再惡化。<br/>
-    🎯 <b>目標：淨化全部 4 個污染海域！</b> 在商店買<b>淨化機</b>,回海上把它<b>放進</b>污染區就會自動淨化;買<b>撈取機</b>放在海面自動撈垃圾。可放多台、也能收回換位置。<br/>
-    🔧 機器有<b>耐久度</b>，用一段時間會損壞消失，要記得補買新的。<br/>
-    <b>海洋健康度</b>越高，魚越多、賣價越好。🌙 夜晚會出現魷魚等夜行性高價魚種。
-  </div>`;
+// ---------- 海廢文創小舖：委託 + 賤價賣垃圾 ----------
+function trashCounts(){
+  const m = {};
+  for (const it of state.hold) m[it.key] = (m[it.key]||0)+1;
+  return m;
+}
+function currentCommission(){ return COMMISSIONS[state.commissionIdx % COMMISSIONS.length]; }
+function canFulfill(com, counts){
+  for (const k in com.need) if ((counts[k]||0) < com.need[k]) return false;
+  return true;
+}
+function incomeMul(){ return 1 + state.up.sonar*0.08; }   // 雷達升級提升委託/賣垃圾收入
+function renderArtshop(body){
+  const counts = trashCounts();
+  const com = currentCommission();
+  const prog = state.commissionProgress;
+  const reward = Math.round(com.reward * incomeMul());
+  // 是否手上有任何「這個委託還需要的」材料可繳
+  const canSubmit = Object.keys(com.need).some(k => (counts[k]||0)>0 && (prog[k]||0)<com.need[k]);
+  const needRows = Object.keys(com.need).map(k=>{
+    const t = TRASH_BY_KEY[k]; const req = com.need[k];
+    const done = prog[k]||0; const have = counts[k]||0;
+    const full = done>=req;
+    const hint = full ? '✓ 已備齊' : (have>0 ? `手上 ${have} 件可繳` : `還缺 ${req-done}`);
+    return `<div class="need-row">
+      <span>${t.emoji} ${t.name} <span style="opacity:.6;font-size:12px">(${hint})</span></span>
+      <b style="color:${full?'#7ef0a0':'#ffcc44'}">已交 ${done}/${req}</b>
+    </div>`;
+  }).join('');
+  const sellRows = TRASH_TYPES.map(t=>{
+    const have = counts[t.key]||0;
+    const price = Math.max(1, Math.round(t.sell*incomeMul()));
+    return `<div class="need-row">
+      <span>${t.emoji} ${t.name} <span style="opacity:.55">×${have}</span></span>
+      <button class="buy-btn" data-sell="${t.key}" ${have<=0?'disabled':''} style="min-width:92px">賣 1 個<span class="price">🪙 ${price}</span></button>
+    </div>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="item" style="display:block;border-color:rgba(255,204,68,0.4)">
+      <div class="item-title" style="font-size:16px">📋 本週委託：${com.emoji} ${com.title}</div>
+      <div class="item-desc" style="margin:4px 0 8px">完成可得 <b style="color:var(--gold)">🪙 ${reward}</b>。可以<b>先交手上的、之後再補</b>，材料不必一次湊齊，湊滿自動完成！</div>
+      <div class="need-list">${needRows}</div>
+      <button class="big-btn" id="btnDeliver" ${canSubmit?'':'disabled'} style="margin-top:10px;${canSubmit?'':'opacity:.45'}">📥 繳交手上的材料</button>
+    </div>
+    <div class="info-text" style="margin:10px 0 6px">🎒 背包 <b>${state.hold.length}/${holdFor(state.up.hold)}</b>　抓錯的垃圾可在這裡<b>賤價賣掉</b>清出空間（防呆機制）：</div>
+    <div class="need-list">${sellRows}</div>
+    <button class="menu-btn alt" id="btnSellExtra" style="margin-top:8px">💱 一鍵賣掉「非委託所需」的垃圾</button>
+  `;
+  const d = body.querySelector('#btnDeliver'); if (d) d.addEventListener('click', deliverCommission);
+  body.querySelectorAll('[data-sell]').forEach(b=>b.addEventListener('click',()=>sellTrash(b.dataset.sell,1)));
+  const se = body.querySelector('#btnSellExtra'); if (se) se.addEventListener('click', sellExtra);
+}
+// 繳交：把手上「委託還需要的」材料先交上去（可分批），湊滿自動完成
+function deliverCommission(){
+  const com = currentCommission();
+  const prog = state.commissionProgress;
+  let moved = 0;
+  for (const k in com.need){
+    let remaining = com.need[k] - (prog[k]||0);
+    for (let i=state.hold.length-1;i>=0 && remaining>0;i--){
+      if (state.hold[i].key===k){ state.hold.splice(i,1); prog[k]=(prog[k]||0)+1; remaining--; moved++; }
+    }
+  }
+  const complete = Object.keys(com.need).every(k => (prog[k]||0) >= com.need[k]);
+  if (complete){
+    const reward = Math.round(com.reward * incomeMul());
+    state.coins += reward; state.stats.earned += reward; state.stats.commissions++;
+    state.commissionIdx = (state.commissionIdx + 1) % COMMISSIONS.length;
+    state.commissionProgress = {};
+    sfx('sell');
+    toast(view.w/2, view.h*0.4, `🎨 委託完成！+${reward}🪙`, 'coin');
+  } else if (moved>0){
+    sfx('buy');
+    toast(view.w/2, view.h*0.42, `📥 已先收下 ${moved} 件，背包空出來了！剩下的再補就好`, 'eco');
+  } else {
+    sfx('error');
+    toast(view.w/2, view.h*0.45, '背包裡沒有這個委託需要的垃圾', 'warn'); return;
+  }
+  updateHUD(); checkQuest(); save(); renderShop();
+}
+function sellTrash(key, n){
+  const price = Math.max(1, Math.round(TRASH_BY_KEY[key].sell*incomeMul()));
+  let sold=0, total=0;
+  for (let i=state.hold.length-1;i>=0 && sold<n;i--){ if (state.hold[i].key===key){ state.hold.splice(i,1); sold++; total+=price; } }
+  if (!sold){ sfx('error'); return; }
+  state.coins += total; state.stats.earned += total;
+  sfx('buy'); updateHUD(); checkQuest(); save(); renderShop();
+}
+function sellExtra(){
+  const com = currentCommission(), prog = state.commissionProgress;
+  const keep = {};   // 只保留「委託尚未繳交、還需要」的數量，其餘賣掉
+  for (const k in com.need) keep[k] = Math.max(0, com.need[k] - (prog[k]||0));
+  let total=0, sold=0;
+  for (let i=state.hold.length-1;i>=0;i--){
+    const k = state.hold[i].key;
+    if (keep[k] > 0){ keep[k]--; continue; }
+    total += Math.max(1, Math.round(TRASH_BY_KEY[k].sell*incomeMul()));
+    state.hold.splice(i,1); sold++;
+  }
+  if (!sold){ toast(view.w/2, view.h*0.45, '沒有多餘的垃圾可賣', 'warn'); sfx('error'); return; }
+  state.coins += total; state.stats.earned += total;
+  sfx('sell'); toast(view.w/2, view.h*0.4, `賣掉 ${sold} 件多餘垃圾 +${total}🪙`, 'coin');
+  updateHUD(); checkQuest(); save(); renderShop();
 }
 function buy(key){
   const d=DEFS[key]; const cost=costOf(d);
@@ -2054,7 +2483,7 @@ function buy(key){
   sfx('buy'); updateMachineBtns(); updateHUD();
   toast(view.w/2, view.h*0.5, `${d.icon} ${d.name} ${d.lvl===d.min+1&&d.min===0?'已安裝':'Lv'+d.lvl}`, 'eco');
   checkQuest(); save();
-  renderShop(d.cat);
+  renderShop();
 }
 
 // ============================================================
@@ -2062,6 +2491,8 @@ function buy(key){
 // ============================================================
 const pauseOverlay = document.getElementById('pause-overlay');
 function togglePause(p) {
+  if (rescue) return;        // 救援海龜進行中不開暫停選單
+  if (p) clearKeys();        // 暫停時停船，避免恢復後船還在跑
   paused = p;
   pauseOverlay.classList.toggle('hidden', !p);
   if (p) { renderStats(); save(); }
@@ -2082,9 +2513,10 @@ function renderStats() {
       <div class="s-row"><span>📅 天數</span><b>第 ${state.day} 天</b></div>
       <div class="s-row"><span>🪙 金幣</span><b>${Math.floor(state.coins)}</b></div>
       <div class="s-row"><span>💰 總收入</span><b>${s.earned}</b></div>
-      <div class="s-row"><span>🐟 釣魚數</span><b>${s.caught}</b></div>
-      <div class="s-row"><span>📦 賣出數</span><b>${s.sold}</b></div>
-      <div class="s-row"><span>♻️ 撈垃圾</span><b>${s.trash}</b></div>
+      <div class="s-row"><span>🎣 釣起垃圾</span><b>${s.caught}</b></div>
+      <div class="s-row"><span>🎨 完成委託</span><b>${s.commissions}</b></div>
+      <div class="s-row"><span>🐢 拯救生物</span><b>${s.rescued}</b></div>
+      <div class="s-row"><span>🗑️ 機器撈取</span><b>${s.trash}</b></div>
       <div class="s-row"><span>✨ 淨化海域</span><b>${s.cleaned}</b></div>
       <div class="s-row"><span>🌊 海洋健康</span><b>${Math.round(state.eco)}%</b></div>
     </div>`;
@@ -2113,7 +2545,7 @@ window.addEventListener('resize', checkOrientation);
 checkOrientation();
 // P 或 Esc 鍵暫停 / 繼續
 window.addEventListener('keydown', e => {
-  if (!running || e.repeat) return;
+  if (!running || e.repeat || rescue) return;
   if (e.code==='KeyP' || e.code==='Escape') {
     if (shopOpen()) { closeShop(); return; }
     togglePause(!paused);
@@ -2126,10 +2558,36 @@ window.addEventListener('keydown', e => {
 function loop(now){
   if (!running){ return; }
   const dt=Math.min(0.05,(now-lastT)/1000)||0; lastT=now;
-  if (!shopOpen() && !paused) update(dt);   // 商店或暫停選單開啟時凍結模擬
+  if (rescue) updateRescue(dt);             // 救援海龜時：世界凍結，只跑救援倒數
+  else if (!shopOpen() && !paused) update(dt);   // 商店或暫停選單開啟時凍結模擬
   render();
   requestAnimationFrame(loop);
 }
+
+// ============================================================
+//  開場故事（方框 + ◀▶ 翻頁）
+// ============================================================
+const STORY = [
+  { ico:'📋', text:'你是一名<b>環保署稽查員</b>。上一份工作因為一樁<b>疑似貪污的弊案</b>，你被長官「請」離了台北的辦公室…' },
+  { ico:'🚢', text:'一紙調令，把你<b>下放到台灣東部的偏鄉海岸</b>。沒有風光的位置，只有一艘<b>小船</b>，和一片<b>滿是垃圾的海</b>。' },
+  { ico:'🌊', text:'這裡的海被<b>塑膠垃圾與微粒</b>嚴重污染，魚群不敢靠近，<b>漁民捕不到魚</b>，生計眼看就要撐不下去。' },
+  { ico:'🎯', text:'你的任務：<b>釣起海洋垃圾</b>、接<b>海廢文創委託</b>賺錢、向<b>🏭點點塑</b>買淨化設備清除污染，還能<b>🐢🪼拯救受困海龜與水母</b>。' },
+  { ico:'🏆', text:'把這片海洋恢復成以往的模樣，幫漁民找回生計——<b>淨化全部海域，立功調回台北！</b><br/><span style="opacity:.7;font-size:14px">🖥️ A／D 或 ←→ 移動，空白鍵釣垃圾　📱 左右鍵移動、點海面釣垃圾</span>' },
+];
+function renderStory(){
+  const p = STORY[storyPage];
+  document.getElementById('storyIco').textContent = p.ico;
+  document.getElementById('storyText').innerHTML = p.text;
+  const dots = STORY.map((_,i)=>`<span class="dot ${i===storyPage?'on':''}"></span>`).join('');
+  document.getElementById('storyDots').innerHTML = dots;
+  document.getElementById('storyPrev').disabled = storyPage===0;
+  const last = storyPage===STORY.length-1;
+  document.getElementById('storyNext').classList.toggle('hidden', last);
+  document.getElementById('btnStart').classList.toggle('hidden', !last);
+}
+document.getElementById('storyPrev').addEventListener('click', ()=>{ if(storyPage>0){ storyPage--; renderStory(); } });
+document.getElementById('storyNext').addEventListener('click', ()=>{ if(storyPage<STORY.length-1){ storyPage++; renderStory(); } });
+renderStory();
 
 // ============================================================
 //  啟動
@@ -2138,9 +2596,9 @@ function startGame(){
   resize();
   if (!state) state=freshState();
   syncDefs();
-  // 初始魚與垃圾
-  for(let i=0;i<24;i++) spawnFish();
-  for(let i=0;i<10;i++) spawnTrash();
+  // 初始魚很少（海洋還很髒）；漂浮垃圾（釣取目標）給足
+  for(let i=0;i<4;i++) spawnFish();
+  for(let i=0;i<16;i++) spawnTrash();
   updateMachineBtns(); updateHUD(); checkQuest(); updateSoundUI();
   initAudio();   // 開始遊戲是使用者手勢，可安全建立音訊
   paused = false;
@@ -2162,7 +2620,7 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
 });
 
 // 自動暫停（切到背景）
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearKeys(); save(); } });
 window.addEventListener('beforeunload', save);
 // 防止手機長按 / 右鍵跳出選單影響操作
 window.addEventListener('contextmenu', e => { if (running) e.preventDefault(); });
