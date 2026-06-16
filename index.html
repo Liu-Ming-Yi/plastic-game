@@ -1196,7 +1196,10 @@ function update(dt) {
   updateFx(dt);
 
   // 船移動
-  const acc = 1050, max = 290 * speedMul(state.up.speed);
+  // 註：強阻力下，實際巡航速度 ≈ 加速度÷阻力係數，與 max 無關，原本固定 acc=1050
+  // 會把速度壓在 ~140px/s（升級 max 也沒感覺）。改讓「加速度」隨引擎等級提升，
+  // 阻力維持不變（停船依然俐落、好靠岸），升級才真正越開越快。
+  const acc = 2800 * speedMul(state.up.speed), max = 460 * speedMul(state.up.speed);
   let dir = 0;
   if (keys.left) dir -= 1;
   if (keys.right) dir += 1;
