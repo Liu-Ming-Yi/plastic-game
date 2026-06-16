@@ -789,6 +789,7 @@ let combo = 0, comboTimer = 0;
 let animClock = 0;    // 連續累加的動畫時鐘（給海浪等視覺用，永不歸零）
 let fx = [];          // 特效粒子（水花、收線星光）
 let allCleanCelebrated = false;  // 是否已慶祝過全海域淨化
+let wiping = false;   // 清除存檔中：阻止 beforeunload/visibilitychange 又把舊狀態寫回去
 let tutStep = -1;     // 目前教學步驟 (-1 = 未進行)
 let tutBase = 0;      // 自動推進步驟的基準值
 let rotateDismissed = false;  // 是否已關閉橫向提示
@@ -864,6 +865,7 @@ function checkOrientation(){
 //  存檔
 // ============================================================
 function save() {
+  if (wiping) return;   // 正在清除存檔 → 不可再寫入，否則重整前會把舊進度又存回去
   try {
     const data = {
       coins: state.coins, up: state.up, eco: state.eco,
@@ -2553,7 +2555,7 @@ function showSettlement(){
     <button id="btnReplay" class="big-btn">🔄 再玩一次</button>
     <button id="btnEndClose" class="menu-btn alt" style="margin-top:10px">看看乾淨的海 🌊</button>
   `;
-  document.getElementById('btnReplay').addEventListener('click', ()=>{ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} location.reload(); });
+  document.getElementById('btnReplay').addEventListener('click', ()=>{ wiping = true; try{ localStorage.removeItem(SAVE_KEY); }catch(e){} location.reload(); });
   document.getElementById('btnEndClose').addEventListener('click', ()=>{ document.getElementById('end-overlay').classList.add('hidden'); paused=false; });
   document.getElementById('end-overlay').classList.remove('hidden');
   paused = true;
@@ -2716,6 +2718,7 @@ document.getElementById('btnSound').addEventListener('click', toggleMute);
 document.getElementById('btnSound2').addEventListener('click', toggleMute);
 document.getElementById('btnReset2').addEventListener('click', ()=>{
   if (window.confirm('確定要清除所有進度，重新開始嗎？')) {
+    wiping = true;
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   }
