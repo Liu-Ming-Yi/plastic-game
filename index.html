@@ -605,6 +605,7 @@ html, body {
         </div>
         <div class="tab-body">
           <div id="statsBox" class="info-text"></div>
+          <button class="menu-btn hidden" id="btnViewResult">🏆 查看通關成績</button>
           <button class="menu-btn" id="btnResume">▶ 繼續遊戲</button>
           <button class="menu-btn alt" id="btnTutorial">📖 重看教學</button>
           <button class="menu-btn alt" id="btnSound2">🔊 音效：開</button>
@@ -779,6 +780,7 @@ function freshState() {
     day: 1,
     muted: false,
     tutDone: false,
+    finalResult: null,        // 通關時凍結的考核成績（之後繼續玩也不變，可重看）
   };
 }
 
@@ -805,6 +807,7 @@ const QUESTS = [
   { text:'點海面，用釣竿釣起 3 件海洋垃圾',  done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
   { text:'到右邊「🎨海廢文創小舖」完成第 1 筆委託', done:s=>s.stats.commissions>=1, prog:s=>[s.stats.commissions,1], reward:50 },
   { text:'到「🛠️設備商店」把背包或釣竿升級一次',  done:s=>s.up.rod>=2||s.up.hold>=2, prog:s=>[(s.up.rod>=2||s.up.hold>=2)?1:0,1], reward:50 },
+  { id:'buyScoop', text:'到「🏭點點塑」購買「海洋垃圾撈取機」並放到海面上', done:s=>s.placed.some(p=>p.type==='scoop') || allZonesClean(s), prog:s=>[s.placed.some(p=>p.type==='scoop')?1:0,1], reward:60 },
   { text:'到「🏭點點塑」購買「波浪式汙泥脫水機台」放置污染區上方', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
   { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:120 },
   { text:'拯救 1 隻被塑膠袋纏住的海龜或水母', done:s=>s.stats.rescued>=1, prog:s=>[s.stats.rescued,1], reward:80 },
@@ -814,6 +817,8 @@ const QUESTS = [
   { text:'讓海洋健康度回升到 70%',      done:s=>s.eco>=70,          prog:s=>[Math.round(s.eco),70], reward:150 },
   { text:'最終目標：淨化全部 4 個污染海域，立功調回台北！', done:s=>allZonesClean(s), prog:s=>[cleanedZones(s),s.zones.length], reward:300 },
 ];
+// 「購買撈取機並放置」任務是否已完成 → 完成前鎖住「波浪式汙泥脫水機台（淨化機）」的購買
+function scoopQuestDone(){ const i = QUESTS.findIndex(q=>q.id==='buyScoop'); return i<0 || state.questIdx > i; }
 
 // ---------- 引導教學步驟 ----------
 const TUT = [
@@ -866,6 +871,7 @@ function checkOrientation(){
 // ============================================================
 function save() {
   if (wiping) return;   // 正在清除存檔 → 不可再寫入，否則重整前會把舊進度又存回去
+  if (!running) return; // 遊戲尚未真正開始（還在開始畫面）→ 不可用「全新空白狀態」蓋掉玩家既有存檔
   try {
     const data = {
       coins: state.coins, up: state.up, eco: state.eco,
@@ -873,6 +879,7 @@ function save() {
       zones: state.zones, stats: state.stats, questIdx: state.questIdx,
       commissionIdx: state.commissionIdx, commissionProgress: state.commissionProgress, commDone: state.commDone,
       boatX: state.boat.x, time: state.time, day: state.day, muted: state.muted, tutDone: state.tutDone,
+      finalResult: state.finalResult,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   } catch (e) {}
@@ -918,6 +925,7 @@ function load() {
     state.day = d.day ?? 1;
     state.muted = d.muted ?? false;
     state.tutDone = d.tutDone ?? false;
+    state.finalResult = d.finalResult || null;
     // 同步升級定義等級
     for (const k in DEFS) DEFS[k].lvl = state.up[k];
     return true;
@@ -1143,7 +1151,7 @@ function toggleMachine(type) {
   } else {
     toast(view.w/2, view.h*0.55, '沒有可放置的機器，去漁港商店購買', 'warn'); sfx('error');
   }
-  updateMachineBtns(); save();
+  updateMachineBtns(); checkQuest(); save();
 }
 
 // 點海面任意空白處即可釣魚（移動請用左右鍵）
@@ -2478,13 +2486,17 @@ function renderMachines(){
   let html=`<div class="info-text" style="margin-bottom:10px">這裡是<b>🏭點點塑</b>——專門攔截、收集海洋塑膠微粒的社會企業。買來的機器回到海上，用畫面下方按鈕<b>放置</b>；可放多台同時運作，靠近自己的機器再按一次可<b>收回</b>移到別區。<br/>⚠️ 機器有<b>耐久度</b>（約 ${MACHINE.scoop.life} 秒），耗盡會<b>損壞報廢消失</b>，需要再購買新的；機器上方的色條代表剩餘耐久（收回會保留剩餘耐久）。</div>`;
   for (const k of ['scoop','filter']){
     const m=MACHINE[k]; const owned=machineOwned(k); const maxed=owned>=m.cap; const can=!maxed && state.coins>=m.price;
-    const btn = maxed ? `<button class="buy-btn maxed" disabled>已達上限</button>`
-      : `<button class="buy-btn" data-buymachine="${k}" ${can?'':'disabled'}>購買<span class="price">🪙 ${m.price}</span></button>`;
+    const locked = (k==='filter' && !scoopQuestDone());   // 淨化機需先完成撈取機任務才解鎖
+    let btn;
+    if (locked) btn = `<button class="buy-btn" disabled>🔒 未解鎖</button>`;
+    else if (maxed) btn = `<button class="buy-btn maxed" disabled>已達上限</button>`;
+    else btn = `<button class="buy-btn" data-buymachine="${k}" ${can?'':'disabled'}>購買<span class="price">🪙 ${m.price}</span></button>`;
+    const lockNote = locked ? `<br/><span style="color:#ffcc44">🔒 需先完成任務「購買撈取機並放置」才能購買</span>` : '';
     html+=`<div class="item">
       <div class="item-icon">${m.icon}</div>
       <div class="item-main">
         <div class="item-title">${m.name} <span class="item-lvl">擁有 ${owned} 台${maxed?'（上限）':` / ${m.cap}`}</span></div>
-        <div class="item-desc">${desc[k]}</div>
+        <div class="item-desc">${desc[k]}${lockNote}</div>
       </div>${btn}
     </div>`;
   }
@@ -2492,6 +2504,9 @@ function renderMachines(){
 }
 function buyMachine(type){
   const m=MACHINE[type];
+  if (type==='filter' && !scoopQuestDone()){
+    sfx('error'); toast(view.w/2, view.h*0.5, '🔒 先完成任務「購買撈取機並放置」才能購買淨化機', 'warn'); return;
+  }
   if (machineOwned(type) >= m.cap || state.coins < m.price){ sfx('error'); return; }
   state.coins -= m.price; state.inv[type]++;
   sfx('buy'); updateMachineBtns(); updateHUD(); checkQuest(); save();
@@ -2528,12 +2543,28 @@ function computeRank(){
 }
 
 // 通關結算畫面：考核評等 + 海廢文創「成果展」彩蛋
+// 第一次通關時把成績「凍結」存進 state.finalResult，之後繼續玩、或從暫停選單重看，
+// 顯示的分數與統計都不會再變動。
 function showSettlement(){
-  const r = computeRank();
+  if (!state.finalResult){
+    const r = computeRank();
+    state.finalResult = {
+      rank: r.rank, pts: r.pts, comment: r.comment,
+      day: state.day,
+      earned: Math.floor(state.stats.earned),
+      caught: state.stats.caught,
+      trash: state.stats.trash,
+      rescued: state.stats.rescued,
+      commissions: state.stats.commissions,
+      commDone: Object.assign({}, state.commDone),
+    };
+    save();
+  }
+  const f = state.finalResult;
   const statRow = (label,val)=>`<div class="es-row"><span>${label}</span><b>${val}</b></div>`;
   // 成果展：列出這場完成過的文創委託作品（彩蛋）
-  const ecItems = Object.keys(state.commDone).map(ci=>{
-    const c = COMMISSIONS[+ci]; const n = state.commDone[ci];
+  const ecItems = Object.keys(f.commDone).map(ci=>{
+    const c = COMMISSIONS[+ci]; const n = f.commDone[ci];
     if (!c || n<=0) return '';
     return `<div class="ec-item"><div class="ec-emoji">${c.emoji}</div><div class="ec-name">${c.title}</div><div class="ec-cnt">×${n}</div></div>`;
   }).join('');
@@ -2543,15 +2574,15 @@ function showSettlement(){
   document.getElementById('endBody').innerHTML = `
     <div class="end-head">🏆 通關結算</div>
     <div class="end-story">海洋恢復了，魚群回來、漁民找回生計——你立功<b>調回台北</b>了！</div>
-    <div class="rank-badge rank-${r.rank}">${r.rank}</div>
-    <div class="rank-comment">稽查員考核評等：<b>${r.rank}</b>　${r.comment}</div>
+    <div class="rank-badge rank-${f.rank}">${f.rank}</div>
+    <div class="rank-comment">稽查員考核評等：<b>${f.rank}</b>　考核分數 <b>${f.pts} / 18</b><br/>${f.comment}</div>
     <div class="end-stats">
-      ${statRow('🗓️ 花費天數', state.day + ' 天')}
-      ${statRow('🪙 總收入', Math.floor(state.stats.earned))}
-      ${statRow('🎣 釣起垃圾', state.stats.caught + ' 件')}
-      ${statRow('🗑️ 機器清除', state.stats.trash + ' 件')}
-      ${statRow('🐢 拯救生物', state.stats.rescued + ' 隻')}
-      ${statRow('🎨 完成委託', state.stats.commissions + ' 筆')}
+      ${statRow('🗓️ 花費天數', f.day + ' 天')}
+      ${statRow('🪙 總收入', f.earned)}
+      ${statRow('🎣 釣起垃圾', f.caught + ' 件')}
+      ${statRow('🗑️ 機器清除', f.trash + ' 件')}
+      ${statRow('🐢 拯救生物', f.rescued + ' 隻')}
+      ${statRow('🎨 完成委託', f.commissions + ' 筆')}
     </div>
     <h3 class="ec-title">🎨 你的海廢文創成果展</h3>
     ${showcase}
@@ -2688,7 +2719,11 @@ function togglePause(p) {
   if (p) clearKeys();        // 暫停時停船，避免恢復後船還在跑
   paused = p;
   pauseOverlay.classList.toggle('hidden', !p);
-  if (p) { renderStats(); save(); }
+  if (p) {
+    renderStats(); save();
+    // 已通關過 → 顯示「查看通關成績」按鈕
+    document.getElementById('btnViewResult').classList.toggle('hidden', !state.finalResult);
+  }
 }
 function updateSoundUI() {
   document.getElementById('btnSound').textContent = state.muted ? '🔇' : '🔊';
@@ -2717,6 +2752,8 @@ function renderStats() {
 document.getElementById('btnPause').addEventListener('click', ()=>togglePause(true));
 document.getElementById('pauseClose').addEventListener('click', ()=>togglePause(false));
 document.getElementById('btnResume').addEventListener('click', ()=>togglePause(false));
+// 重看凍結的通關成績（看完關掉可繼續玩，成績不變）
+document.getElementById('btnViewResult').addEventListener('click', ()=>{ togglePause(false); if (state.finalResult) showSettlement(); });
 document.getElementById('btnSound').addEventListener('click', toggleMute);
 document.getElementById('btnSound2').addEventListener('click', toggleMute);
 document.getElementById('btnReset2').addEventListener('click', ()=>{
