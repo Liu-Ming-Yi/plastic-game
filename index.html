@@ -394,6 +394,8 @@ html, body {
 .rank-badge.rank-A { color: #7ef0a0; text-shadow: 0 0 14px rgba(126,240,160,0.4); }
 .rank-badge.rank-B { color: #6fb5ff; }
 .rank-badge.rank-C { color: #ffb38a; }
+.rank-badge.rank-D { color: #ff9a6c; }
+.rank-badge.rank-E { color: #ff6b78; }
 .rank-comment { font-size: 14px; margin-bottom: 14px; opacity: 0.95; line-height: 1.6; }
 .rank-comment b { color: var(--gold); }
 .end-stats {
@@ -774,7 +776,7 @@ function freshState() {
     commissionIdx: 0,         // 目前文創委託編號（循環）
     commissionProgress: {},   // 目前委託「已先繳交」的材料數 {key:已交數}
     commDone: {},             // 已完成的文創委託 {委託index: 完成次數} — 給結算「成果展」用
-    stats: { caught:0, delivered:0, commissions:0, trash:0, cleaned:0, earned:0, rescued:0 },
+    stats: { caught:0, delivered:0, commissions:0, trash:0, cleaned:0, earned:0, rescued:0, filtersWorked:0 },
     questIdx: 0,
     time: time,
     day: 1,
@@ -911,6 +913,7 @@ function load() {
         worldX: p.worldX,
         cd: typeof p.cd === 'number' ? p.cd : 0,
         life: typeof p.life === 'number' ? p.life : MACHINE[p.type].life,
+        scored: !!p.scored,
       }));
     if (d.zones) state.zones = d.zones;
     // 防呆：舊存檔的污染區座標若超出目前世界範圍，重建一份
@@ -1204,10 +1207,10 @@ function update(dt) {
   updateFx(dt);
 
   // 船移動
-  // 註：強阻力下，實際巡航速度 ≈ 加速度÷阻力係數，與 max 無關，原本固定 acc=1050
-  // 會把速度壓在 ~140px/s（升級 max 也沒感覺）。改讓「加速度」隨引擎等級提升，
-  // 阻力維持不變（停船依然俐落、好靠岸），升級才真正越開越快。
-  const acc = 2800 * speedMul(state.up.speed), max = 460 * speedMul(state.up.speed);
+  // 註：強阻力下，實際巡航速度 ≈ 加速度÷阻力係數，與 max 無關。原本 acc 固定 1050（基礎手感剛好），
+  // 但升級不改 acc → 速度不變、升級無感。改讓 acc 隨引擎等級提升：基礎 Lv1 維持原本手感，
+  // 每升一級巡航速度約 +45%，升級才真正越開越快（阻力不變，停船依然俐落、好靠岸）。
+  const acc = 1050 * speedMul(state.up.speed), max = 290 * speedMul(state.up.speed);
   let dir = 0;
   if (keys.left) dir -= 1;
   if (keys.right) dir += 1;
@@ -1297,6 +1300,8 @@ function update(dt) {
         if (m.worldX > z.x0-R && m.worldX < z.x1+R){
           const before=z.p;
           z.p = Math.max(0, z.p - MACHINE.filter.rate*dt);
+          // 這台淨化機「真的降低了污染」→ 計一次考核分（同一台只算一次，放乾淨海面不會加分）
+          if (z.p < before && !m.scored){ m.scored = true; state.stats.filtersWorked = (state.stats.filtersWorked||0) + 1; }
           if (z.p <= CLEAN_P) z.p = 0;   // 低於門檻 → 直接視為完全淨化（與畫面一致，避免殘留看不見的污染卡任務）
           if (before>0 && z.p===0){
             state.stats.cleaned++;
@@ -2526,19 +2531,25 @@ function checkAllClean(){
   }
 }
 
-// 稽查員考核評等：依「清得多快、救了幾隻、完成幾筆委託」給 S/A/B/C
+// 稽查員考核評等：滿分 100 分
+//   淨化海域 每區 +5（共 4 區 = 20）
+//   淨化機（真的降低過污染的才算）每台 +4.5
+//   完成委託 每筆 +2、拯救生物 每隻 +3、自己釣起的垃圾 每件 +0.5
 function computeRank(){
   let pts = 0;
-  pts += Math.min(state.stats.rescued, 3) * 2;       // 拯救生物 每隻 +2（最多 +6）
-  pts += Math.min(state.stats.commissions, 6) * 1;   // 完成委託 每筆 +1（最多 +6）
-  if (state.day <= 2) pts += 6;                       // 通關速度（用幾天清完全部）
-  else if (state.day <= 4) pts += 4;
-  else if (state.day <= 6) pts += 2;
+  pts += state.stats.cleaned * 5;                   // 淨化海域
+  pts += (state.stats.filtersWorked||0) * 4.5;      // 真正淨化過海水的淨化機
+  pts += state.stats.commissions * 2;               // 完成委託（不限）
+  pts += state.stats.rescued * 3;                   // 拯救生物（不限）
+  pts += state.stats.caught * 0.5;                  // 自己釣起的垃圾
+  pts = Math.min(100, Math.round(pts));             // 四捨五入並封頂 100
   let rank, comment;
-  if (pts >= 13){ rank='S'; comment='傳奇稽查員！海洋因你煥然一新，長官親自頒獎。'; }
-  else if (pts >= 9){ rank='A'; comment='表現優異！這片海洋以你為榮。'; }
-  else if (pts >= 5){ rank='B'; comment='做得不錯，海洋明顯變乾淨了。'; }
-  else { rank='C'; comment='任務達成！下次救多一點海龜、多接委託可拿更高評等。'; }
+  if (pts >= 90){ rank='S'; comment='傳奇稽查員！海洋因你煥然一新，長官親自頒獎。'; }
+  else if (pts >= 80){ rank='A'; comment='表現優異！這片海洋以你為榮。'; }
+  else if (pts >= 65){ rank='B'; comment='做得不錯，海洋明顯變乾淨了。'; }
+  else if (pts >= 50){ rank='C'; comment='任務達成，但還有不少進步空間。'; }
+  else if (pts >= 35){ rank='D'; comment='勉強過關～多放淨化機、多接委託、多救生物可以拉高評等。'; }
+  else { rank='E'; comment='海洋雖然清乾淨了，考核成績卻不太理想，下次加油！'; }
   return { rank, comment, pts };
 }
 
@@ -2575,7 +2586,7 @@ function showSettlement(){
     <div class="end-head">🏆 通關結算</div>
     <div class="end-story">海洋恢復了，魚群回來、漁民找回生計——你立功<b>調回台北</b>了！</div>
     <div class="rank-badge rank-${f.rank}">${f.rank}</div>
-    <div class="rank-comment">稽查員考核評等：<b>${f.rank}</b>　考核分數 <b>${f.pts} / 18</b><br/>${f.comment}</div>
+    <div class="rank-comment">稽查員考核評等：<b>${f.rank}</b>　考核分數 <b>${f.pts}</b> 分（滿分 100）<br/>${f.comment}</div>
     <div class="end-stats">
       ${statRow('🗓️ 花費天數', f.day + ' 天')}
       ${statRow('🪙 總收入', f.earned)}
