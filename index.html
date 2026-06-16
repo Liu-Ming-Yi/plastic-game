@@ -262,6 +262,13 @@ html, body {
   color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer;
   text-decoration: underline; font-family: inherit;
 }
+.story-links { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
+.link-btn {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  color: #cfe8ff; font-size: 13px; font-weight: 700; cursor: pointer;
+  padding: 8px 16px; border-radius: 999px; font-family: inherit;
+}
+.link-btn:active { transform: scale(0.96); }
 
 /* 商店面板 */
 .panel-head {
@@ -607,6 +614,8 @@ html, body {
           <button class="menu-btn" id="btnResume">▶ 繼續遊戲</button>
           <button class="menu-btn alt" id="btnTutorial">📖 重看教學</button>
           <button class="menu-btn alt" id="btnSound2">🔊 音效：開</button>
+          <button class="menu-btn alt" id="btnSite">🌐 點點塑官網</button>
+          <button class="menu-btn alt" id="btnFb">👍 點點塑粉絲專頁</button>
           <button class="menu-btn danger" id="btnReset2">🗑️ 清除存檔重新開始</button>
         </div>
       </div>
@@ -632,6 +641,10 @@ html, body {
           <button id="storyNext" class="story-arrow" aria-label="下一頁">▶</button>
         </div>
         <button id="btnStart" class="big-btn hidden">⚓ 上任，開始任務</button>
+        <div class="story-links">
+          <button id="btnSiteStart" class="link-btn">🌐 點點塑官網</button>
+          <button id="btnFbStart" class="link-btn">👍 粉絲專頁</button>
+        </div>
         <button id="btnReset" class="text-btn">清除存檔重新開始</button>
       </div>
     </div>
@@ -1156,7 +1169,11 @@ function cast() {
   if (state.line.active) return;
   const shop = nearShop();
   if (shop) { openShop(shop); return; }
-  if (state.hold.length >= holdFor(state.up.hold)) {
+  // 背包滿時仍允許放線「救援」附近的受困生物：救援不佔背包，
+  // 且萬一鉤到垃圾，deliverTrash 會自動放回海裡並提示，所以很安全
+  const tu = state.turtle;
+  const canRescueNear = tu && tu.hideT<=0 && Math.abs(tu.worldX - state.boat.x) < 60;
+  if (state.hold.length >= holdFor(state.up.hold) && !canRescueNear) {
     toast(view.w/2, view.h*0.55, '背包滿了！去海岸把垃圾交委託或賣掉 ▶', 'warn'); sfx('error'); return;
   }
   state.line = { active:true, phase:'down', depth:0, caught:null };
@@ -2713,6 +2730,14 @@ document.getElementById('btnReset2').addEventListener('click', ()=>{
     location.reload();
   }
 });
+
+// 官網（目前系統維護中，點擊只顯示提示，不導向）/ 粉專（開新分頁）
+// 官網網址：https://micropctw.com/product/ （恢復後可改為 window.open 導向）
+const FB_URL = 'https://www.facebook.com/micropctaiwan/?locale=zh_TW';
+function openSite(){ window.alert('🛠 點點塑官網目前系統維護中，敬請見諒，稍後再來看看！'); }
+function openFb(){ window.open(FB_URL, '_blank', 'noopener'); }
+['btnSite','btnSiteStart'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', openSite); });
+['btnFb','btnFbStart'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', openFb); });
 
 // 教學按鈕
 document.getElementById('tutNext').addEventListener('click', tutNext);
