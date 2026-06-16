@@ -663,13 +663,19 @@ html, body {
 
 // ---------- 禁止手機雙擊放大（iOS Safari 會忽略 user-scalable=no，需用 JS 攔截）----------
 (function preventDoubleTapZoom(){
+  // 可點擊的元素（按鈕、連結、輸入框等）一律放行，雙擊也照常每次都觸發，避免「點太快沒反應」
+  const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], canvas';
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (e) => {
     const now = e.timeStamp;
-    if (now - lastTouchEnd <= 350) e.preventDefault();  // 350ms 內的第二次點擊 = 雙擊，取消放大
+    const isDouble = now - lastTouchEnd <= 350;       // 350ms 內的第二次點擊 = 雙擊
     lastTouchEnd = now;
+    // 只在「非互動區域」(面板背景、文字等) 取消雙擊放大；按鈕/可點元素照常觸發
+    if (isDouble && !(e.target.closest && e.target.closest(INTERACTIVE))) {
+      e.preventDefault();
+    }
   }, { passive: false });
-  // 攔截 iOS 的雙指/雙擊縮放手勢
+  // 攔截 iOS 的雙指縮放手勢
   document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
 })();
 
