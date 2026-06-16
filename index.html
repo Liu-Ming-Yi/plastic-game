@@ -263,13 +263,6 @@ html, body {
   color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer;
   text-decoration: underline; font-family: inherit;
 }
-.story-links { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
-.link-btn {
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-  color: #cfe8ff; font-size: 13px; font-weight: 700; cursor: pointer;
-  padding: 8px 16px; border-radius: 999px; font-family: inherit;
-}
-.link-btn:active { transform: scale(0.96); }
 
 /* 商店面板 */
 .panel-head {
@@ -642,10 +635,6 @@ html, body {
           <button id="storyNext" class="story-arrow" aria-label="下一頁">▶</button>
         </div>
         <button id="btnStart" class="big-btn hidden">⚓ 上任，開始任務</button>
-        <div class="story-links">
-          <button id="btnSiteStart" class="link-btn">🌐 點點塑官網</button>
-          <button id="btnFbStart" class="link-btn">👍 粉絲專頁</button>
-        </div>
         <button id="btnReset" class="text-btn">清除存檔重新開始</button>
       </div>
     </div>
@@ -2737,8 +2726,8 @@ document.getElementById('btnReset2').addEventListener('click', ()=>{
 const FB_URL = 'https://www.facebook.com/micropctaiwan/?locale=zh_TW';
 function openSite(){ window.alert('🛠 點點塑官網目前系統維護中，敬請見諒，稍後再來看看！'); }
 function openFb(){ window.open(FB_URL, '_blank', 'noopener'); }
-['btnSite','btnSiteStart'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', openSite); });
-['btnFb','btnFbStart'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', openFb); });
+document.getElementById('btnSite').addEventListener('click', openSite);
+document.getElementById('btnFb').addEventListener('click', openFb);
 
 // 教學按鈕
 document.getElementById('tutNext').addEventListener('click', tutNext);
