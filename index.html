@@ -520,6 +520,7 @@ html, body {
         <span class="icon" id="clockIcon">☀️</span><span class="val" id="clock">06:00</span>
       </div>
       <div class="top-btns">
+        <button id="btnResultTop" class="icon-btn hidden" aria-label="通關成績">🏆</button>
         <button id="btnSound" class="icon-btn" aria-label="音效">🔊</button>
         <button id="btnPause" class="icon-btn" aria-label="暫停">⏸</button>
       </div>
@@ -656,7 +657,8 @@ html, body {
 // ---------- 基本設定 ----------
 const WORLD_W = 3000;          // 海洋世界總寬度
 const HARBOR_X = WORLD_W - 360; // 海岸線（三棟建築所在帶狀區）起點
-const DAY_LEN = 150;           // 一天 = 150 秒
+const DAY_LEN = 150;           // 一天 = 150 秒（仍用來驅動日夜畫面與天數）
+const DAY_START_T = DAY_LEN * 6 / 24;   // 每局從早上 6:00 開始，換算成秒（用來把「經過時間」歸零）
 const SAVE_KEY = 'oceanInspector.save.v1';
 
 // ---------- 海岸三棟建築 ----------
@@ -2354,6 +2356,7 @@ const HUD = {
   btnScoop: document.getElementById('btnScoop'),
   btnFilter:document.getElementById('btnFilter'),
   commission:document.getElementById('commission-hud'),
+  resultTop:document.getElementById('btnResultTop'),
 };
 const _hudPrev = {};
 function setText(el, key, val){ if (_hudPrev[key] !== val){ _hudPrev[key] = val; el.textContent = val; } }
@@ -2371,10 +2374,15 @@ function updateHUD() {
     HUD.ecoVal.textContent  = eco+'%';
     HUD.ecoIcon.textContent = eco>=66 ? '💚' : eco>=33 ? '💛' : '💔';
   }
-  // 時鐘
-  const h=(state.time/DAY_LEN)*24; const hh=Math.floor(h), mm=Math.floor((h-hh)*60);
-  setText(HUD.clock,     'clock',     String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'));
-  setText(HUD.clockIcon, 'clockIcon', isNight()?'🌙':'☀️');
+  // 計時器：顯示「實際遊玩經過時間」分:秒（取代原本轉很快、容易看不懂的 24 小時遊戲時鐘）
+  // 經過秒數 = 已過天數 + 當天時間 − 起始 6:00 偏移；只在實際遊玩時累加（暫停/商店不算）
+  const elapsed = Math.max(0, (state.day-1)*DAY_LEN + state.time - DAY_START_T);
+  const em = Math.floor(elapsed/60), es = Math.floor(elapsed%60);
+  setText(HUD.clock,     'clock',     String(em).padStart(2,'0')+':'+String(es).padStart(2,'0'));
+  setText(HUD.clockIcon, 'clockIcon', '⏱️');
+  // 通關過 → 右上角顯示 🏆 成績按鈕（比藏在暫停選單好找）
+  const hasResult = !!state.finalResult;
+  if (_hudPrev.hasResult !== hasResult){ _hudPrev.hasResult = hasResult; HUD.resultTop.classList.toggle('hidden', !hasResult); }
   // 釣魚鈕：靠岸時變成「進入建築」
   setText(HUD.btnCast, 'btnCast', nearShop() ? '🏪 進入' : '🎣 釣垃圾');
   renderCommissionHud();
@@ -2562,6 +2570,7 @@ function showSettlement(){
     state.finalResult = {
       rank: r.rank, pts: r.pts, comment: r.comment,
       day: state.day,
+      timeSec: Math.max(0, (state.day-1)*DAY_LEN + state.time - DAY_START_T),  // 凍結通關當下的遊玩時間
       earned: Math.floor(state.stats.earned),
       caught: state.stats.caught,
       trash: state.stats.trash,
@@ -2573,6 +2582,7 @@ function showSettlement(){
   }
   const f = state.finalResult;
   const statRow = (label,val)=>`<div class="es-row"><span>${label}</span><b>${val}</b></div>`;
+  const fmtT = s => { const m=Math.floor(s/60), x=Math.floor(s%60); return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0'); };
   // 成果展：列出這場完成過的文創委託作品（彩蛋）
   const ecItems = Object.keys(f.commDone).map(ci=>{
     const c = COMMISSIONS[+ci]; const n = f.commDone[ci];
@@ -2588,6 +2598,7 @@ function showSettlement(){
     <div class="rank-badge rank-${f.rank}">${f.rank}</div>
     <div class="rank-comment">稽查員考核評等：<b>${f.rank}</b>　考核分數 <b>${f.pts}</b> 分（滿分 100）<br/>${f.comment}</div>
     <div class="end-stats">
+      ${statRow('⏱️ 花費時間', fmtT(f.timeSec || 0))}
       ${statRow('🗓️ 花費天數', f.day + ' 天')}
       ${statRow('🪙 總收入', f.earned)}
       ${statRow('🎣 釣起垃圾', f.caught + ' 件')}
@@ -2766,6 +2777,11 @@ function renderStats() {
       <div class="s-row"><span>🌊 海洋健康</span><b>${Math.round(state.eco)}%</b></div>
     </div>`;
 }
+document.getElementById('btnResultTop').addEventListener('click', ()=>{
+  if (!state.finalResult || rescue) return;
+  if (shopOpen()) closeShop();
+  showSettlement();
+});
 document.getElementById('btnPause').addEventListener('click', ()=>togglePause(true));
 document.getElementById('pauseClose').addEventListener('click', ()=>togglePause(false));
 document.getElementById('btnResume').addEventListener('click', ()=>togglePause(false));
@@ -2848,6 +2864,7 @@ renderStory();
 //  啟動
 // ============================================================
 function startGame(){
+  if (running) return;   // 防止連點「開始」啟動多個遊戲迴圈（會造成時間/移動變成多倍速）
   resize();
   if (!state) state=freshState();
   syncDefs();
