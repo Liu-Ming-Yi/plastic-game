@@ -656,8 +656,8 @@ const SAVE_KEY = 'oceanInspector.save.v1';
 // ---------- 海岸三棟建築 ----------
 // 玩家把船開到建築附近即可進入；各建築功能不同
 const SHOPS = {
-  recycler: { name:'回收商',       icon:'🛠️', x: WORLD_W - 470 }, // 升級船 / 釣竿 / 背包 / 雷達
-  micropc:  { name:'點點塑',       icon:'🏭', x: WORLD_W - 300 }, // 購買淨化機 / 撈取機
+  recycler: { name:'設備商店',     icon:'🛠️', x: WORLD_W - 470 }, // 升級船 / 釣竿 / 背包 / 雷達
+  micropc:  { name:'點點塑',       icon:'🏭', x: WORLD_W - 300 }, // 購買收集機台 / 撈取機
   artshop:  { name:'海廢文創小舖', icon:'🎨', x: WORLD_W - 130 }, // 接委託 + 賤價賣多餘垃圾
 };
 const DOCK_X = SHOPS.artshop.x;   // 船可航行到的最右界（最右邊那棟）
@@ -672,7 +672,7 @@ let running = false;
 let lastT = 0;
 let time = 6 * 60 * 60 / (24*60*60) * DAY_LEN; // 從早上6點開始(秒)
 
-// ---------- 升級定義（在「回收商」購買）----------
+// ---------- 升級定義（在「設備商店」購買）----------
 const DEFS = {
   rod:    { name:'釣竿',           icon:'🎣', cat:'upgrade', lvl:1, min:1, max:6, base:30,  mul:1.7 },
   speed:  { name:'船用引擎',       icon:'⚙️', cat:'upgrade', lvl:1, min:1, max:6, base:25,  mul:1.6 },
@@ -692,7 +692,7 @@ const descOf = {
 // ---------- 環保機器（購買後放置定點、自動運作；可收回重放） ----------
 const MACHINE = {
   scoop:  { name:'海洋垃圾撈取機', icon:'🗑️', price:80,  range:155, cd:0.7,    cap:5, life:30 },
-  filter: { name:'塑膠微粒過濾機', icon:'💧', price:120, range:170, rate:0.018, cap:5, life:30 },
+  filter: { name:'塑膠微粒收集機台', icon:'💧', price:120, range:170, rate:0.018, cap:5, life:30 },
 };
 // 擁有總數 = 全新庫存 + 收回保留的半舊機(spares) + 已放置在海上的
 function machineOwned(type){
@@ -701,9 +701,9 @@ function machineOwned(type){
 // 可立即放置的數量（全新 + 半舊收回的）
 function machineAvail(type){ return state.inv[type] + state.spares[type].length; }
 // 污染擴張參數（緩慢）：未淨化海域會慢慢變寬、濃度也微幅回升；
-// 但淨化機速度（0.018/秒）遠快於回升，且已淨化(p≈0)的海域不會再擴張，仍可穩定全清通關
+// 但收集機台速度（0.018/秒）遠快於回升，且已淨化(p≈0)的海域不會再擴張，仍可穩定全清通關
 const POLLUTION_EXPAND = 0.7;    // px/秒（每側）— 非常緩慢地變寬
-const POLLUTION_CREEP  = 0.0005; // 濃度/秒 — 極微幅回升（淨化機快 36 倍，清理時穩定下降）
+const POLLUTION_CREEP  = 0.0005; // 濃度/秒 — 極微幅回升（收集機台快 36 倍，清理時穩定下降）
 // 「已淨化」門檻：濃度低於此值就視為完全乾淨（畫面也不再畫污染），讓「看起來乾淨」＝「任務算乾淨」
 const CLEAN_P = 0.04;
 
@@ -800,8 +800,8 @@ const cleanedZones  = s => s.zones.filter(z => z.p <= CLEAN_P).length;
 const QUESTS = [
   { text:'點海面，用釣竿釣起 3 件海洋垃圾',  done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
   { text:'到右邊「🎨海廢文創小舖」完成第 1 筆委託', done:s=>s.stats.commissions>=1, prog:s=>[s.stats.commissions,1], reward:50 },
-  { text:'到「🛠️回收商」把背包或釣竿升級一次',  done:s=>s.up.rod>=2||s.up.hold>=2, prog:s=>[(s.up.rod>=2||s.up.hold>=2)?1:0,1], reward:50 },
-  { text:'到「🏭點點塑」購買「淨化機」放進污染區', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
+  { text:'到「🛠️設備商店」把背包或釣竿升級一次',  done:s=>s.up.rod>=2||s.up.hold>=2, prog:s=>[(s.up.rod>=2||s.up.hold>=2)?1:0,1], reward:50 },
+  { text:'到「🏭點點塑」購買「收集機台」放進污染區', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
   { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:120 },
   { text:'拯救 1 隻被塑膠袋纏住的海龜或水母', done:s=>s.stats.rescued>=1, prog:s=>[s.stats.rescued,1], reward:80 },
   { text:'累計完成 3 筆文創委託',       done:s=>s.stats.commissions>=3, prog:s=>[s.stats.commissions,3], reward:120 },
@@ -817,8 +817,8 @@ const TUT = [
   { text:'先學移動：按住左下 ◀ 或右下 ▶ 開船（電腦可用 A／D 或方向鍵）。試著移動看看！', enter:s=>tutBase=s.boat.x, auto:s=>Math.abs(s.boat.x - tutBase) > 80 },
   { text:'釣垃圾：直接<b>點海面</b>任意處（電腦可按空白鍵）放下釣竿，把<b>海洋垃圾</b>撈起來收進背包。試著釣一件！', enter:s=>tutBase=s.stats.caught, auto:s=>s.stats.caught > tutBase },
   { text:'換錢：把船開到<b>最右邊海岸</b>的三棟建築。靠近<b>🎨海廢文創小舖</b>，點金色按鈕進入，<b>完成委託</b>賺大錢；抓錯的垃圾也能在這裡<b>賤價賣掉</b>清背包。', manual:true },
-  { text:'升級裝備：靠近<b>🛠️回收商</b>可升級<b>釣竿、引擎、背包、雷達</b>，讓你撈得更快更多。', manual:true },
-  { text:'淨化海洋：<b>深色海域</b>是塑膠微粒污染區，魚不敢靠近。靠近<b>🏭點點塑</b>買<b>淨化機</b>，開回污染區用下方 💧 鍵放下，它會自動淨化。', manual:true },
+  { text:'升級裝備：靠近<b>🛠️設備商店</b>可升級<b>釣竿、引擎、背包、雷達</b>，讓你撈得更快更多。', manual:true },
+  { text:'淨化海洋：<b>深色海域</b>是塑膠微粒污染區，魚不敢靠近。靠近<b>🏭點點塑</b>買<b>收集機台</b>，開回污染區用下方 💧 鍵放下，它會自動淨化。', manual:true },
   { text:'⚠️ 機器有<b>耐久度</b>，用約 30 秒會<b>損壞消失</b>要再買；沒處理的污染區會<b>慢慢擴大</b>，動作要快！撈取機 🗑️ 放海面會自動撈垃圾換錢。', manual:true },
   { text:'🐢🪼 突發事件：海面偶爾出現頭上有 <b>❗</b> 的<b>受困海龜或水母</b>（被塑膠袋纏住），用釣竿碰到牠就能進入<b>救援畫面</b>，快速連點幫牠掙脫，成功有獎金！', manual:true },
   { text:'🌊 最終目標：淨化全部 4 個污染海域，讓魚群回來、漁民有生計，立功調回台北！祝你好運～', manual:true, last:true },
@@ -1130,11 +1130,11 @@ function toggleMachine(type) {
   } else if (state.spares[type].length > 0) {       // 放一台半舊的（用回先前剩餘耐久）
     const life = state.spares[type].pop();
     state.placed.push({ type, worldX: state.boat.x, cd: 0, life });
-    toast(sx, sy, (type==='filter'?'💧 放置淨化機':'🗑️ 放置撈取機'), 'eco'); sfx('buy');
+    toast(sx, sy, (type==='filter'?'💧 放置收集機台':'🗑️ 放置撈取機'), 'eco'); sfx('buy');
   } else if (state.inv[type] > 0) {                 // 放一台全新的（滿耐久）
     state.inv[type]--;
     state.placed.push({ type, worldX: state.boat.x, cd: 0, life: MACHINE[type].life });
-    toast(sx, sy, (type==='filter'?'💧 放置淨化機':'🗑️ 放置撈取機'), 'eco'); sfx('buy');
+    toast(sx, sy, (type==='filter'?'💧 放置收集機台':'🗑️ 放置撈取機'), 'eco'); sfx('buy');
   } else {
     toast(view.w/2, view.h*0.55, '沒有可放置的機器，去漁港商店購買', 'warn'); sfx('error');
   }
@@ -1295,7 +1295,7 @@ function update(dt) {
     if (z.p > 0.02) {
       z.x0 = Math.max(180, z.x0 - POLLUTION_EXPAND * dt);
       z.x1 = Math.min(SHOPS.recycler.x - 110, z.x1 + POLLUTION_EXPAND * dt);
-      z.p  = Math.min(1, z.p + POLLUTION_CREEP * dt);   // 淨化機 0.018/s 遠快於此，放對位置仍能清乾淨
+      z.p  = Math.min(1, z.p + POLLUTION_CREEP * dt);   // 收集機台 0.018/s 遠快於此，放對位置仍能清乾淨
     }
   }
 
@@ -2240,7 +2240,7 @@ function drawBoat(c, t) {
 }
 
 const BUILD_STYLE = {
-  recycler: { wall:'#5d6b78', roof:'#39485a', accent:'#9fb4c2', label:'回收商' },
+  recycler: { wall:'#5d6b78', roof:'#39485a', accent:'#9fb4c2', label:'設備商店' },
   micropc:  { wall:'#2f8f7c', roof:'#1f6256', accent:'#8ef0d8', label:'點點塑' },
   artshop:  { wall:'#c96a8e', roof:'#933f63', accent:'#ffd6e6', label:'海廢文創小舖' },
 };
@@ -2382,7 +2382,7 @@ function updateMachineBtns() {
   const near = type => state.placed.some(p=>p.type===type && Math.abs(p.worldX-state.boat.x)<70);
   const ns = near('scoop'), nf = near('filter');
   setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回撈取機' : `🗑️ 放撈取機 (${machineAvail('scoop')})`);
-  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回淨化機' : `💧 放淨化機 (${machineAvail('filter')})`);
+  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回收集機台' : `💧 放收集機台 (${machineAvail('filter')})`);
   const sd = !(machineAvail('scoop')>0 || ns), fd = !(machineAvail('filter')>0 || nf);
   if (_hudPrev.scoopDis !== sd){ _hudPrev.scoopDis = sd; HUD.btnScoop.disabled = sd; }
   if (_hudPrev.filterDis !== fd){ _hudPrev.filterDis = fd; HUD.btnFilter.disabled = fd; }
@@ -2461,9 +2461,9 @@ function renderShop(key){
 function renderMachines(){
   const desc = {
     scoop: '放到海面上 → 自動撈起附近漂浮垃圾(可賣錢、改善海洋健康)',
-    filter:'點點塑的顆粒捕捉技術：放進深色污染區 → 自動過濾塑膠微粒，魚群才會回來',
+    filter:'點點塑的顆粒捕捉技術：放進深色污染區 → 自動收集塑膠微粒，魚群才會回來',
   };
-  let html=`<div class="info-text" style="margin-bottom:10px">這裡是<b>🏭點點塑</b>——專門攔截、過濾海洋塑膠微粒的社會企業。買來的機器回到海上，用畫面下方按鈕<b>放置</b>；可放多台同時運作，靠近自己的機器再按一次可<b>收回</b>移到別區。<br/>⚠️ 機器有<b>耐久度</b>（約 ${MACHINE.scoop.life} 秒），耗盡會<b>損壞報廢消失</b>，需要再購買新的；機器上方的色條代表剩餘耐久（收回會保留剩餘耐久）。</div>`;
+  let html=`<div class="info-text" style="margin-bottom:10px">這裡是<b>🏭點點塑</b>——專門攔截、收集海洋塑膠微粒的社會企業。買來的機器回到海上，用畫面下方按鈕<b>放置</b>；可放多台同時運作，靠近自己的機器再按一次可<b>收回</b>移到別區。<br/>⚠️ 機器有<b>耐久度</b>（約 ${MACHINE.scoop.life} 秒），耗盡會<b>損壞報廢消失</b>，需要再購買新的；機器上方的色條代表剩餘耐久（收回會保留剩餘耐久）。</div>`;
   for (const k of ['scoop','filter']){
     const m=MACHINE[k]; const owned=machineOwned(k); const maxed=owned>=m.cap; const can=!maxed && state.coins>=m.price;
     const btn = maxed ? `<button class="buy-btn maxed" disabled>已達上限</button>`
@@ -2749,11 +2749,10 @@ function loop(now){
 //  開場故事（方框 + ◀▶ 翻頁）
 // ============================================================
 const STORY = [
-  { ico:'📋', text:'你是一名<b>環保署稽查員</b>。上一份工作因為一樁<b>疑似貪污的弊案</b>，你被長官「請」離了台北的辦公室…' },
+  { ico:'📋', text:'你是一名<b>環保署稽查員</b>。上一份工作因為<b>幫主管背黑鍋</b>，你被長官「請」離了台北的辦公室…' },
   { ico:'🚢', text:'一紙調令，把你<b>下放到台灣東部的偏鄉海岸</b>。沒有風光的位置，只有一艘<b>小船</b>，和一片<b>滿是垃圾的海</b>。' },
   { ico:'🌊', text:'這裡的海被<b>塑膠垃圾與微粒</b>嚴重污染，魚群不敢靠近，<b>漁民捕不到魚</b>，生計眼看就要撐不下去。' },
-  { ico:'🎯', text:'你的任務：<b>釣起海洋垃圾</b>、接<b>海廢文創委託</b>賺錢、向<b>🏭點點塑</b>買淨化設備清除污染，還能<b>🐢🪼拯救受困海龜與水母</b>。' },
-  { ico:'🏆', text:'把這片海洋恢復成以往的模樣，幫漁民找回生計——<b>淨化全部海域，立功調回台北！</b><br/><span style="opacity:.7;font-size:14px">🖥️ A／D 或 ←→ 移動，空白鍵釣垃圾　📱 左右鍵移動、點海面釣垃圾</span>' },
+  { ico:'🏆', text:'把這片海洋恢復成以往的模樣，幫漁民找回生計——<b>淨化海域！立下大功！調回台北！</b><br/><span style="opacity:.7;font-size:14px">🖥️ A／D 或 ←→ 移動，空白鍵釣垃圾　📱 左右鍵移動、點海面釣垃圾</span>' },
 ];
 function renderStory(){
   const p = STORY[storyPage];
