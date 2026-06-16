@@ -2414,8 +2414,8 @@ function renderCommissionHud() {
 function updateMachineBtns() {
   const near = type => state.placed.some(p=>p.type===type && Math.abs(p.worldX-state.boat.x)<70);
   const ns = near('scoop'), nf = near('filter');
-  setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回收集機台' : `🗑️ 放收集機台 (${machineAvail('scoop')})`);
-  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回淨化機' : `💧 放淨化機 (${machineAvail('filter')})`);
+  setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回收塑膠微粒收集機台' : `🗑️ 放收塑膠微粒收集機台 (${machineAvail('scoop')})`);
+  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回波浪式汙泥脫水機' : `💧 波浪式汙泥脫水機 (${machineAvail('filter')})`);
   const sd = !(machineAvail('scoop')>0 || ns), fd = !(machineAvail('filter')>0 || nf);
   if (_hudPrev.scoopDis !== sd){ _hudPrev.scoopDis = sd; HUD.btnScoop.disabled = sd; }
   if (_hudPrev.filterDis !== fd){ _hudPrev.filterDis = fd; HUD.btnFilter.disabled = fd; }
@@ -2518,7 +2518,7 @@ function renderMachines(){
 function buyMachine(type){
   const m=MACHINE[type];
   if (type==='filter' && !scoopQuestDone()){
-    sfx('error'); toast(view.w/2, view.h*0.5, '🔒 先完成任務「購買塑膠微粒收集機台並放置」才能購買淨化機', 'warn'); return;
+    sfx('error'); toast(view.w/2, view.h*0.5, '🔒 先完成任務「購買塑膠微粒收集機台並放置」才能購買機器', 'warn'); return;
   }
   if (machineOwned(type) >= m.cap || state.coins < m.price){ sfx('error'); return; }
   state.coins -= m.price; state.inv[type]++;
