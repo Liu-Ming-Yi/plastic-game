@@ -2588,9 +2588,15 @@ function showSettlement(){
     ${showcase}
     <button id="btnReplay" class="big-btn">🔄 再玩一次</button>
     <button id="btnEndClose" class="menu-btn alt" style="margin-top:10px">看看乾淨的海 🌊</button>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button id="btnEndSite" class="menu-btn alt" style="margin-top:0; flex:1;">🌐 點點塑官網</button>
+      <button id="btnEndFb" class="menu-btn alt" style="margin-top:0; flex:1;">👍 粉絲專頁</button>
+    </div>
   `;
   document.getElementById('btnReplay').addEventListener('click', ()=>{ wiping = true; try{ localStorage.removeItem(SAVE_KEY); }catch(e){} location.reload(); });
   document.getElementById('btnEndClose').addEventListener('click', ()=>{ document.getElementById('end-overlay').classList.add('hidden'); paused=false; });
+  document.getElementById('btnEndSite').addEventListener('click', openSite);
+  document.getElementById('btnEndFb').addEventListener('click', openFb);
   document.getElementById('end-overlay').classList.remove('hidden');
   paused = true;
 }
