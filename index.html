@@ -801,7 +801,7 @@ const QUESTS = [
   { text:'點海面，用釣竿釣起 3 件海洋垃圾',  done:s=>s.stats.caught>=3,  prog:s=>[s.stats.caught,3],   reward:30 },
   { text:'到右邊「🎨海廢文創小舖」完成第 1 筆委託', done:s=>s.stats.commissions>=1, prog:s=>[s.stats.commissions,1], reward:50 },
   { text:'到「🛠️設備商店」把背包或釣竿升級一次',  done:s=>s.up.rod>=2||s.up.hold>=2, prog:s=>[(s.up.rod>=2||s.up.hold>=2)?1:0,1], reward:50 },
-  { text:'到「🏭點點塑」購買「收集機台」放進污染區', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
+  { text:'到「🏭點點塑」購買「塑膠微粒收集機台」放置污染區上方', done:s=>machineOwned('filter')>0 || allZonesClean(s), prog:s=>[machineOwned('filter'),1], reward:100 },
   { text:'淨化一個深色污染海域',        done:s=>s.stats.cleaned>=1 || allZonesClean(s), prog:s=>[Math.max(s.stats.cleaned,cleanedZones(s)),1], reward:120 },
   { text:'拯救 1 隻被塑膠袋纏住的海龜或水母', done:s=>s.stats.rescued>=1, prog:s=>[s.stats.rescued,1], reward:80 },
   { text:'累計完成 3 筆文創委託',       done:s=>s.stats.commissions>=3, prog:s=>[s.stats.commissions,3], reward:120 },
