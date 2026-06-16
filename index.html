@@ -203,6 +203,9 @@ html, body {
   background: linear-gradient(180deg, #6fb5ff, #2e7fd6);
   color: #021a33;
   box-shadow: 0 4px 12px rgba(46,127,214,0.3);
+  white-space: nowrap;      /* 完整名稱保持單行，不在膠囊裡折行 */
+  border-radius: 16px;      /* 文字變長改用圓角矩形，比膠囊更耐看 */
+  max-width: 100%;          /* 避免超寬時衝出畫面 */
 }
 .ctrl.action.small:nth-child(3) {
   background: linear-gradient(180deg, #9be0ff, #4aa6d6);
@@ -210,8 +213,12 @@ html, body {
 .ctrl:disabled { opacity: 0.4; filter: grayscale(0.6); cursor: not-allowed; }
 .center-cluster > .row { display: flex; gap: 8px; }
 
-/* 把兩個小按鈕並排 */
-#btnScoop, #btnFilter { min-width: 100px; }
+/* 兩個機台按鈕：名稱較長，窄螢幕時會各自換到一行 */
+#btnScoop, #btnFilter { min-width: 140px; }
+/* 窄螢幕（手機直立）自動縮字級，確保完整名稱單行塞得下黑框 */
+@media (max-width: 440px) {
+  .ctrl.action.small { font-size: 12px; padding: 8px 12px; }
+}
 
 /* ---------- 靠岸提示 ---------- */
 #dockHint {
@@ -2414,8 +2421,8 @@ function renderCommissionHud() {
 function updateMachineBtns() {
   const near = type => state.placed.some(p=>p.type===type && Math.abs(p.worldX-state.boat.x)<70);
   const ns = near('scoop'), nf = near('filter');
-  setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回收塑膠微粒收集機台' : `🗑️ 放收塑膠微粒收集機台 (${machineAvail('scoop')})`);
-  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回波浪式汙泥脫水機' : `💧 波浪式汙泥脫水機 (${machineAvail('filter')})`);
+  setText(HUD.btnScoop,  'btnScoopTxt',  ns ? '🗑️ 收回塑膠微粒收集機台' : `🗑️ 放置塑膠微粒收集機台 (${machineAvail('scoop')})`);
+  setText(HUD.btnFilter, 'btnFilterTxt', nf ? '💧 收回波浪式汙泥脫水機台' : `💧 放置波浪式汙泥脫水機台 (${machineAvail('filter')})`);
   const sd = !(machineAvail('scoop')>0 || ns), fd = !(machineAvail('filter')>0 || nf);
   if (_hudPrev.scoopDis !== sd){ _hudPrev.scoopDis = sd; HUD.btnScoop.disabled = sd; }
   if (_hudPrev.filterDis !== fd){ _hudPrev.filterDis = fd; HUD.btnFilter.disabled = fd; }
