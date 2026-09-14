@@ -661,22 +661,57 @@ html, body {
 (() => {
 'use strict';
 
-// ---------- 禁止手機雙擊放大（iOS Safari 會忽略 user-scalable=no，需用 JS 攔截）----------
+// ---------- 禁止手機雙擊放大／縮小（iOS Safari 會忽略 user-scalable=no，需用 JS 攔截）----------
 (function preventDoubleTapZoom(){
-  // 可點擊的元素（按鈕、連結、輸入框等）一律放行，雙擊也照常每次都觸發，避免「點太快沒反應」
-  const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], canvas';
+  // 會自己處理焦點的表單元素：不攔截，避免鍵盤/選單開不起來
+  const FORM_FIELD = 'input, select, textarea, label';
+  // 有 click 監聽的可點元素：攔截縮放後，改用程式補發 click，連點照樣每次都有效
+  const CLICKABLE  = 'button, a, [role="button"]';
   let lastTouchEnd = 0;
-  document.addEventListener('touchend', (e) => {
-    const now = e.timeStamp;
-    const isDouble = now - lastTouchEnd <= 350;       // 350ms 內的第二次點擊 = 雙擊
-    lastTouchEnd = now;
-    // 只在「非互動區域」(面板背景、文字等) 取消雙擊放大；按鈕/可點元素照常觸發
-    if (isDouble && !(e.target.closest && e.target.closest(INTERACTIVE))) {
-      e.preventDefault();
+  // 補發 click 的保險：萬一某些瀏覽器仍然送出原生 click，就把它吃掉，避免同一下被算成兩次
+  let firedBtn = null, firedAt = 0, firing = false;
+
+  document.addEventListener('click', (e) => {
+    if (firing || !firedBtn) return;                  // firing = 正在補發，放行
+    const btn = e.target && e.target.closest ? e.target.closest(CLICKABLE) : null;
+    if (btn === firedBtn && e.timeStamp - firedAt < 150) {
+      firedBtn = null;
+      e.stopPropagation(); e.preventDefault();
     }
+  }, true);
+
+  document.addEventListener('touchend', (e) => {
+    // 多指（縮放手勢）交給下面的 gesture 攔截處理
+    if (e.touches && e.touches.length > 0) { lastTouchEnd = 0; return; }
+
+    const now = e.timeStamp;
+    const isDouble = now - lastTouchEnd <= 400;       // 400ms 內的第二次點擊 = 雙擊
+    lastTouchEnd = now;
+    if (!isDouble) return;
+
+    const t = e.target;
+    if (t && t.closest && t.closest(FORM_FIELD)) return;   // 表單元素照原生行為
+
+    // 一律取消雙擊的預設行為（這就是瀏覽器縮放畫面的來源），面板/按鈕/畫布都不例外
+    e.preventDefault();
+
+    // 補發按鈕點擊：preventDefault 會連帶取消瀏覽器自動產生的 click，這裡手動補回來
+    const btn = t && t.closest ? t.closest(CLICKABLE) : null;
+    if (btn && !btn.disabled && typeof btn.click === 'function') {
+      firedBtn = btn; firedAt = e.timeStamp;
+      firing = true;
+      btn.click();
+      firing = false;
+    }
+    // 畫布（點海面釣魚）用的是 pointerdown，不受 touchend 影響，不需補發
   }, { passive: false });
+
   // 攔截 iOS 的雙指縮放手勢
-  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  });
+  // 桌面瀏覽器的雙擊選字／縮放
+  document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 })();
 
 // ---------- 基本設定 ----------
